@@ -65,8 +65,12 @@ export default function BookDemoPage() {
                 <input className="w-full border rounded px-3 py-2" required />
               </div>
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Work email</label>
+                <label className="block text-sm text-gray-700 mb-1">Email</label>
                 <input className="w-full border rounded px-3 py-2" type="email" required />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Phone</label>
+                <input className="w-full border rounded px-3 py-2" type="tel" required />
               </div>
               {audience === "school" ? (
                 <>
@@ -74,22 +78,8 @@ export default function BookDemoPage() {
                     <label className="block text-sm text-gray-700 mb-1">School / Center</label>
                     <input className="w-full border rounded px-3 py-2" required />
                   </div>
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-1">Number of classrooms</label>
-                    <select className="w-full border rounded px-3 py-2" defaultValue="1-3">
-                      <option value="1-3">1-3</option>
-                      <option value="4-7">4-7</option>
-                      <option value="8-12">8-12</option>
-                      <option value="13+">13+</option>
-                    </select>
-                  </div>
                 </>
-              ) : (
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Child’s center (optional)</label>
-                  <input className="w-full border rounded px-3 py-2" />
-                </div>
-              )}
+              ) : null}
               <button
                 type="submit"
                 className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"

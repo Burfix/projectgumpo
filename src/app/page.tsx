@@ -61,17 +61,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl h-96 flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <svg
-              className="w-24 h-24 mx-auto mb-4 text-green-300"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-            </svg>
-            <p>Care visibility, at a glance</p>
-          </div>
+        <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl h-96 flex items-center justify-center overflow-hidden">
+          <img
+            src="/images/hero-visibility.svg"
+            alt="Project Goose care visibility dashboard"
+            className="w-full h-full object-cover"
+          />
         </div>
       </section>
 

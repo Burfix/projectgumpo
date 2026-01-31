@@ -1,0 +1,50 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E6F7EE" />
+      <stop offset="100%" stop-color="#E9F0FF" />
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F7FAFC" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="900" rx="48" fill="url(#bg)" />
+
+  <circle cx="180" cy="170" r="110" fill="#C7F2D5" />
+  <circle cx="1040" cy="150" r="90" fill="#DCE6FF" />
+  <circle cx="1020" cy="760" r="120" fill="#E3F7FF" />
+
+  <rect x="120" y="210" width="520" height="430" rx="28" fill="url(#card)" stroke="#E2E8F0" />
+  <rect x="160" y="250" width="300" height="26" rx="13" fill="#E2E8F0" />
+  <rect x="160" y="295" width="420" height="18" rx="9" fill="#E2E8F0" />
+
+  <rect x="160" y="345" width="440" height="86" rx="16" fill="#ECFDF3" stroke="#BBF7D0" />
+  <rect x="180" y="368" width="110" height="14" rx="7" fill="#22C55E" />
+  <rect x="180" y="392" width="250" height="12" rx="6" fill="#86EFAC" />
+
+  <rect x="160" y="455" width="440" height="86" rx="16" fill="#EFF6FF" stroke="#BFDBFE" />
+  <rect x="180" y="478" width="120" height="14" rx="7" fill="#3B82F6" />
+  <rect x="180" y="502" width="220" height="12" rx="6" fill="#93C5FD" />
+
+  <rect x="160" y="565" width="320" height="14" rx="7" fill="#E2E8F0" />
+  <rect x="160" y="592" width="260" height="14" rx="7" fill="#E2E8F0" />
+
+  <rect x="690" y="260" width="390" height="300" rx="28" fill="url(#card)" stroke="#E2E8F0" />
+  <circle cx="760" cy="320" r="34" fill="#22C55E" />
+  <rect x="810" y="305" width="210" height="16" rx="8" fill="#E2E8F0" />
+  <rect x="810" y="330" width="160" height="12" rx="6" fill="#E2E8F0" />
+
+  <rect x="720" y="380" width="330" height="140" rx="20" fill="#F0FDF4" stroke="#BBF7D0" />
+  <path d="M740 480 L790 430 L840 460 L900 410 L960 440" stroke="#22C55E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="790" cy="430" r="8" fill="#22C55E" />
+  <circle cx="840" cy="460" r="8" fill="#22C55E" />
+  <circle cx="900" cy="410" r="8" fill="#22C55E" />
+  <circle cx="960" cy="440" r="8" fill="#22C55E" />
+
+  <rect x="680" y="600" width="420" height="140" rx="24" fill="#FFFFFF" stroke="#E2E8F0" />
+  <rect x="710" y="630" width="200" height="14" rx="7" fill="#E2E8F0" />
+  <rect x="710" y="655" width="260" height="12" rx="6" fill="#E2E8F0" />
+  <rect x="710" y="680" width="180" height="12" rx="6" fill="#E2E8F0" />
+</svg>
