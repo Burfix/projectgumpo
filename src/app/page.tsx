@@ -26,11 +26,11 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Welcome to Project Goose
+            Real-time visibility into your child’s day — at school or with a caregiver.
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Stay connected with your school's day. Real-time updates on meals, naps, activities, and
-            milestones. Easy check-in with QR codes and direct messaging with teachers.
+            Project Goose delivers peace of mind with verified updates, secure check-ins, and clear
+            communication — plus hands-on onboarding for every school.
           </p>
           <div className="flex gap-4">
             <Link
@@ -48,16 +48,16 @@ export default function Home() {
           </div>
           <div className="mt-12 flex flex-col gap-3 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <span className="text-green-600 font-bold">✓</span> POPIA-aligned
+              <span className="text-green-600 font-bold">✓</span> POPIA-aligned privacy
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-green-600 font-bold">✓</span> Guardian-only photos
+              <span className="text-green-600 font-bold">✓</span> Verified staff updates
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-green-600 font-bold">✓</span> Time-stamped logs
+              <span className="text-green-600 font-bold">✓</span> Guardian-only access
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-green-600 font-bold">✓</span> Teacher-verified
+              <span className="text-green-600 font-bold">✓</span> Guided onboarding included
             </div>
           </div>
         </div>
@@ -70,47 +70,83 @@ export default function Home() {
             >
               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
             </svg>
-            <p>Hero Image</p>
+            <p>Care visibility, at a glance</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Audience Split */}
+      <section className="bg-gray-50 py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">I’m a...</h2>
+          <p className="text-center text-gray-600 mb-10">
+            Choose your path for tailored messaging and next steps
+          </p>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Pre-School / Daycare</h3>
+              <p className="text-gray-600 mb-4">
+                Strengthen parent trust, reduce admin overhead, and run a more transparent center.
+              </p>
+              <Link
+                href="/schools"
+                className="text-green-700 font-semibold hover:text-green-800"
+              >
+                Explore for schools →
+              </Link>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Parent / Caregiver</h3>
+              <p className="text-gray-600 mb-4">
+                Get real-time reassurance, safety updates, and proof of care throughout the day.
+              </p>
+              <Link
+                href="/parents"
+                className="text-green-700 font-semibold hover:text-green-800"
+              >
+                Explore for parents →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="bg-gray-50 py-20">
+      <section id="features" className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">
-            What we offer at Project Goose
+            Outcomes that build trust
           </h2>
           <p className="text-center text-gray-600 mb-16">
-            Features designed for everyone in your childcare community
+            This isn’t just software — it’s visibility, accountability, and support.
           </p>
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {/* Live Updates */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Live Updates</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Peace of mind</h3>
               <p className="text-gray-600 mb-6">
-                Know exactly how your child's day unfolded.
+                Parents see verified updates in real time — not hours later.
               </p>
               <div className="space-y-3 text-sm text-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  Meals, naps, potty, mood
+                  Meals, naps, mood, and milestones
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  Logged in real time
+                  Verified by staff, time-stamped
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  Visible instantly to you
+                  Instant visibility for guardians
                 </div>
               </div>
               <div className="mt-8 bg-green-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
@@ -120,16 +156,16 @@ export default function Home() {
 
             {/* Photos & Reports */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Photos & Reports</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Proof of care</h3>
               <p className="text-gray-600 mb-6">
-                Capture every special moment.
+                Photos, notes, and observations create a clear record of the day.
               </p>
               <div className="space-y-3 text-sm text-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  Daily photo updates
+                  Daily photo updates (guardian-only)
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -151,9 +187,9 @@ export default function Home() {
 
             {/* Safety First */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Safety First</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Safety & accountability</h3>
               <p className="text-gray-600 mb-6">
-                Complete peace of mind.
+                Clear audit trails, secure check-in, and approved pickups only.
               </p>
               <div className="space-y-3 text-sm text-gray-700">
                 <div className="flex items-center gap-3">
@@ -182,28 +218,28 @@ export default function Home() {
 
             {/* Direct Messaging */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Direct Messaging</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Human support</h3>
               <p className="text-gray-600 mb-6">
-                Stay in touch with teachers.
+                We don’t just hand you an app — we help you roll it out.
               </p>
               <div className="space-y-3 text-sm text-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  In-app chat
+                  Onboarding & rollout guidance
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  Share files & photos
+                  Training for staff & admins
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 font-bold">→</span>
                   </div>
-                  Quick responses
+                  Ongoing success check-ins
                 </div>
               </div>
               <div className="mt-8 bg-orange-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
@@ -274,22 +310,20 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20">
+      <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">
             How Project Goose works
           </h2>
-          <p className="text-center text-gray-600 mb-16">
-            Three simple roles, one connected experience
-          </p>
+          <p className="text-center text-gray-600 mb-16">Three simple steps to launch</p>
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Teachers */}
-            <div className="bg-gray-50 rounded-xl p-8">
+            <div className="bg-white rounded-xl p-8 border border-gray-200">
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">👨‍🏫</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Teachers</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">1. Book a demo</h3>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
                   <span className="text-green-600">✓</span> Quick-tap logging for all activities
@@ -307,11 +341,11 @@ export default function Home() {
             </div>
 
             {/* Parents */}
-            <div className="bg-gray-50 rounded-xl p-8">
+            <div className="bg-white rounded-xl p-8 border border-gray-200">
               <div className="bg-pink-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">👨‍👩‍👧</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Parents</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">2. Set up your school</h3>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
                   <span className="text-green-600">✓</span> Real-time activity feed
@@ -329,12 +363,12 @@ export default function Home() {
             </div>
 
             {/* Administrators */}
-            <div className="bg-gray-50 rounded-xl p-8">
+            <div className="bg-white rounded-xl p-8 border border-gray-200">
               <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">⚙️</span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-                Administrators
+                3. Invite your community
               </h3>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
@@ -356,7 +390,7 @@ export default function Home() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="bg-gray-50 py-20">
+      <section id="about" className="bg-white py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">
             Nurturing Young Minds Since Day One
@@ -366,6 +400,50 @@ export default function Home() {
             they can explore, learn, and grow. Our platform helps centers deliver that care with
             consistent updates, secure access, and clear communication across the whole community.
           </p>
+        </div>
+      </section>
+
+      {/* Trust & Privacy */}
+      <section className="bg-gray-50 py-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Trust signals</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Privacy-first by default</h3>
+              <p className="text-gray-600">
+                Guardian-only access, role-based permissions, and POPIA-aligned data handling.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Founder-led onboarding</h3>
+              <p className="text-gray-600">
+                We help you set up rooms, roles, and workflows so rollout is smooth.
+              </p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Built for accountability</h3>
+              <p className="text-gray-600">
+                Time-stamped logs and verified staff updates reduce ambiguity.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Direction */}
+      <section id="pricing" className="py-20">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Pricing direction</h2>
+          <p className="text-gray-600 mb-8">
+            Schools subscribe monthly. Parents get access included. Premium family add-ons can be
+            enabled if desired.
+          </p>
+          <Link
+            href="/book-demo"
+            className="inline-block px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+          >
+            Request pricing
+          </Link>
         </div>
       </section>
 
