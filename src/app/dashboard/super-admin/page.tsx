@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 
 export default async function SuperAdminDashboard() {
@@ -94,18 +95,30 @@ export default async function SuperAdminDashboard() {
                 >
                   View All Users
                 </Link>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                <Link
+                  href="/dashboard/super-admin/audit-logs"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                >
                   Audit Logs
-                </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                </Link>
+                <Link
+                  href="/dashboard/super-admin/system-settings"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                >
                   System Settings
-                </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                </Link>
+                <Link
+                  href="/dashboard/super-admin/reports"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                >
                   Generate Reports
-                </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                </Link>
+                <Link
+                  href="/dashboard/super-admin/backups"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                >
                   Backups
-                </button>
+                </Link>
               </div>
             </div>
 
