@@ -5,7 +5,7 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <div className="text-2xl font-bold text-green-600">Gumpo</div>
+        <div className="text-2xl font-bold text-green-600">Project Goose</div>
         <div className="flex gap-4">
           <Link
             href="/auth/login"
@@ -14,10 +14,10 @@ export default function Home() {
             Sign In
           </Link>
           <Link
-            href="/auth/login"
+            href="/book-demo"
             className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
-            Get Started
+            Book Demo
           </Link>
         </div>
       </nav>
@@ -26,18 +26,18 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Welcome to Gumpo Pre-School
+            Welcome to Project Goose
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Stay connected with your child's day. Real-time updates on meals, naps, activities, and
+            Stay connected with your school's day. Real-time updates on meals, naps, activities, and
             milestones. Easy check-in with QR codes and direct messaging with teachers.
           </p>
           <div className="flex gap-4">
             <Link
-              href="/auth/login"
+              href="/book-demo"
               className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
             >
-              Get Started
+              Book Demo
             </Link>
             <Link
               href="/auth/login"
@@ -79,7 +79,7 @@ export default function Home() {
       <section id="features" className="bg-gray-50 py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">
-            What we offer at Gumpo
+            What we offer at Project Goose
           </h2>
           <p className="text-center text-gray-600 mb-16">
             Features designed for everyone in your childcare community
@@ -277,7 +277,7 @@ export default function Home() {
       <section id="how-it-works" className="py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">
-            How Gumpo works
+            How Project Goose works
           </h2>
           <p className="text-center text-gray-600 mb-16">
             Three simple roles, one connected experience
@@ -362,26 +362,79 @@ export default function Home() {
             Nurturing Young Minds Since Day One
           </h2>
           <p className="text-lg text-gray-600">
-            At Gumpo Pre-School, we believe every child deserves a safe, loving environment where
-            they can explore, learn, and grow. Our dedicated teachers provide personalized care for
-            children ages 0-4, helping them build the foundation for a lifetime of learning.
+            At Project Goose, we believe every child deserves a safe, loving environment where
+            they can explore, learn, and grow. Our platform helps centers deliver that care with
+            consistent updates, secure access, and clear communication across the whole community.
           </p>
+        </div>
+      </section>
+
+      {/* Next Steps */}
+      <section id="next-steps" className="py-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 text-center">Next steps</h2>
+          <p className="text-center text-gray-600 mb-12">
+            Three simple steps to launch Project Goose at your school
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="text-sm font-semibold text-green-700 mb-2">Step 1</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Book a demo</h3>
+              <p className="text-gray-600 mb-4">
+                See the platform in action and confirm your school’s needs.
+              </p>
+              <Link
+                href="/book-demo"
+                className="text-green-700 font-semibold hover:text-green-800"
+              >
+                Book demo →
+              </Link>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="text-sm font-semibold text-green-700 mb-2">Step 2</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Set up your school</h3>
+              <p className="text-gray-600 mb-4">
+                We help you configure classes, staff roles, and parent access.
+              </p>
+              <Link
+                href="/setup"
+                className="text-green-700 font-semibold hover:text-green-800"
+              >
+                View setup plan →
+              </Link>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="text-sm font-semibold text-green-700 mb-2">Step 3</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Invite your team</h3>
+              <p className="text-gray-600 mb-4">
+                Send staff and parents their invites and go live together.
+              </p>
+              <Link
+                href="/invite-team"
+                className="text-green-700 font-semibold hover:text-green-800"
+              >
+                See invite steps →
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">Join the Gumpo Family</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">Book a demo with Project Goose</h2>
           <p className="text-lg text-gray-600 mb-8">
-            Create your parent account to stay connected with your child's daily activities,
-            communicate with teachers, and manage everything in one place.
+            Get a walkthrough tailored to your school, then launch in days—not weeks.
           </p>
           <Link
-            href="/auth/login"
+            href="/book-demo"
             className="inline-block px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
           >
-            Get Started
+            Book Demo
           </Link>
         </div>
       </section>
@@ -391,7 +444,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
-              <h3 className="text-2xl font-bold mb-4">Gumpo</h3>
+              <h3 className="text-2xl font-bold mb-4">Project Goose</h3>
               <p className="text-gray-400">
                 Trusted daily care tracking for parents, teachers, and growing schools
               </p>
@@ -433,7 +486,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>2026 Gumpo Pre-School Management. All rights reserved.</p>
+            <p>2026 Project Goose. All rights reserved.</p>
           </div>
         </div>
       </footer>
