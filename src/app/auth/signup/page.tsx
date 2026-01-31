@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function parseHashParams(hash: string): Record<string, string> {
@@ -17,7 +16,6 @@ function parseHashParams(hash: string): Record<string, string> {
 }
 
 export default function SignupPage() {
-  const searchParams = useSearchParams();
   const [ready, setReady] = React.useState(false);
   const [email, setEmail] = React.useState<string>("");
   const [fullName, setFullName] = React.useState("");
@@ -31,10 +29,11 @@ export default function SignupPage() {
   React.useEffect(() => {
     async function initSession() {
       const hashParams = parseHashParams(window.location.hash);
+      const queryParams = new URLSearchParams(window.location.search);
       const accessToken =
-        searchParams.get("access_token") ?? hashParams.access_token ?? "";
+        queryParams.get("access_token") ?? hashParams.access_token ?? "";
       const refreshToken =
-        searchParams.get("refresh_token") ?? hashParams.refresh_token ?? "";
+        queryParams.get("refresh_token") ?? hashParams.refresh_token ?? "";
 
       if (accessToken && refreshToken) {
         await supabaseBrowser.auth.setSession({
@@ -51,7 +50,7 @@ export default function SignupPage() {
     }
 
     initSession();
-  }, [searchParams]);
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
