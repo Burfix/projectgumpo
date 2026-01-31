@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 
 export default async function SuperAdminDashboard() {
@@ -87,9 +88,12 @@ export default async function SuperAdminDashboard() {
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">System Actions</h3>
               <div className="space-y-3">
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                <Link
+                  href="/dashboard/super-admin/users"
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium text-center"
+                >
                   View All Users
-                </button>
+                </Link>
                 <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
                   Audit Logs
                 </button>
