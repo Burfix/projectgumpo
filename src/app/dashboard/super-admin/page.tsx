@@ -90,31 +90,31 @@ export default async function SuperAdminDashboard() {
               <div className="space-y-3">
                 <Link
                   href="/dashboard/super-admin/users"
-                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium text-center"
+                  className="flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
                 >
                   View All Users
                 </Link>
                 <Link
                   href="/dashboard/super-admin/audit-logs"
-                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                  className="flex w-full items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
                 >
                   Audit Logs
                 </Link>
                 <Link
                   href="/dashboard/super-admin/system-settings"
-                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                  className="flex w-full items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
                 >
                   System Settings
                 </Link>
                 <Link
                   href="/dashboard/super-admin/reports"
-                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                  className="flex w-full items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
                 >
                   Generate Reports
                 </Link>
                 <Link
                   href="/dashboard/super-admin/backups"
-                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium text-center"
+                  className="flex w-full items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
                 >
                   Backups
                 </Link>
