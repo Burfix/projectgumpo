@@ -1,4 +1,5 @@
 import { protectRoute } from "@/lib/auth/middleware";
+import Link from "next/link";
 
 export default async function TeacherDashboard() {
   const user = await protectRoute(["TEACHER", "ADMIN", "SUPER_ADMIN"]);
