@@ -22,36 +22,48 @@ export default async function SystemSettingsPage() {
             <p className="text-gray-600 text-sm mb-4">
               Review access controls, roles, and security policies.
             </p>
-            <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium">
+            <Link
+              href="/dashboard/super-admin/system-settings/manage-roles"
+              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+            >
               Manage roles
-            </button>
+            </Link>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Notifications</h2>
             <p className="text-gray-600 text-sm mb-4">
               Configure email templates and alert thresholds.
             </p>
-            <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium">
+            <Link
+              href="/dashboard/super-admin/system-settings/configure-emails"
+              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+            >
               Configure emails
-            </button>
+            </Link>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Data retention</h2>
             <p className="text-gray-600 text-sm mb-4">
               Define how long reports and media are stored.
             </p>
-            <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium">
+            <Link
+              href="/dashboard/super-admin/system-settings/update-retention"
+              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+            >
               Update retention
-            </button>
+            </Link>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Integrations</h2>
             <p className="text-gray-600 text-sm mb-4">
               Manage third-party services and API credentials.
             </p>
-            <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium">
+            <Link
+              href="/dashboard/super-admin/system-settings/view-integrations"
+              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+            >
               View integrations
-            </button>
+            </Link>
           </div>
         </div>
       </div>
