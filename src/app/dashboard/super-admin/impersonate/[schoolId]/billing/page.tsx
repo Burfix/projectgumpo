@@ -1,17 +1,49 @@
+"use client";
+
 import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
-import { getSubscriptionBySchoolId, getAddOnsBySubscriptionId } from "@/lib/schools";
+import { useEffect, useState } from "react";
 
-export default async function BillingImpersonated({
+interface Subscription {
+  id: number;
+  tier: string;
+  monthly_price_zar: number;
+  trial_end_date: string | null;
+  billing_status: string;
+}
+
+interface AddOn {
+  id: number;
+  add_on_name: string;
+  monthly_price_zar: number;
+}
+
+export default function BillingImpersonated({
   params,
 }: {
   params: { schoolId: string };
 }) {
-  await protectRoute(["SUPER_ADMIN"]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [addOns, setAddOns] = useState<AddOn[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const schoolId = parseInt(params.schoolId);
-  const subscription = await getSubscriptionBySchoolId(schoolId);
-  const addOns = subscription ? await getAddOnsBySubscriptionId(subscription.id) : [];
+  useEffect(() => {
+    const loadBilling = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/schools/${params.schoolId}/billing`);
+        const data = await response.json();
+        setSubscription(data.subscription);
+        setAddOns(data.addOns);
+      } catch (error) {
+        console.error("Error loading billing:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBilling();
+  }, [params.schoolId]);
 
   const addOnNames: Record<string, string> = {
     photo_packs: "Photo Packs",
@@ -19,6 +51,14 @@ export default async function BillingImpersonated({
     analytics: "Advanced Analytics",
     api_access: "API Access",
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="text-stone-600">Loading billing data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-stone-50">

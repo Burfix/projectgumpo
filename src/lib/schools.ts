@@ -1,5 +1,5 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
 interface School {
   id: number;
@@ -45,10 +45,38 @@ interface BillingReport {
 }
 
 /**
+ * Create a server-side Supabase client
+ */
+function createServerClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+    {
+      auth: {
+        storage: {
+          getItem: (key) => {
+            const cookieStore = cookies();
+            return cookieStore.get(key)?.value ?? null;
+          },
+          setItem: (key, value) => {
+            const cookieStore = cookies();
+            cookieStore.set(key, value);
+          },
+          removeItem: (key) => {
+            const cookieStore = cookies();
+            cookieStore.delete(key);
+          },
+        },
+      },
+    }
+  );
+}
+
+/**
  * Get all schools with their stats
  */
 export async function getSchools(): Promise<School[]> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from("schools")
@@ -67,7 +95,7 @@ export async function getSchools(): Promise<School[]> {
  * Get a single school by ID
  */
 export async function getSchoolById(schoolId: number): Promise<School | null> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from("schools")
@@ -89,7 +117,7 @@ export async function getSchoolById(schoolId: number): Promise<School | null> {
 export async function getSubscriptionBySchoolId(
   schoolId: number
 ): Promise<Subscription | null> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from("subscriptions")
@@ -113,7 +141,7 @@ export async function getSubscriptionBySchoolId(
 export async function getAddOnsBySubscriptionId(
   subscriptionId: number
 ): Promise<AddOn[]> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from("add_ons")
@@ -135,7 +163,7 @@ export async function getAddOnsBySubscriptionId(
 export async function generateBillingReport(
   month?: string
 ): Promise<BillingReport[]> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   // Fetch all schools with their current subscriptions
   const { data: schoolsData, error: schoolsError } = await supabase
@@ -194,7 +222,7 @@ export async function logImpersonationStart(
   superAdminUserId: string,
   schoolId: number
 ): Promise<number | null> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from("impersonation_logs")
@@ -223,7 +251,7 @@ export async function logImpersonationEnd(
   logId: number,
   actionsTaken?: string
 ): Promise<void> {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerClient();
 
   const { error } = await supabase
     .from("impersonation_logs")

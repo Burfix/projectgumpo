@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getSchoolById } from "@/lib/schools";
 
 interface School {
   id: number;
@@ -25,9 +24,15 @@ export default function ImpersonateSchool({
   useEffect(() => {
     const loadSchool = async () => {
       setLoading(true);
-      const data = await getSchoolById(parseInt(params.schoolId));
-      setSchool(data);
-      setLoading(false);
+      try {
+        const response = await fetch(`/api/schools/${params.schoolId}`);
+        const data = await response.json();
+        setSchool(data);
+      } catch (error) {
+        console.error("Error loading school:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadSchool();

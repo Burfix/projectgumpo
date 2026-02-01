@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { generateBillingReport } from "@/lib/schools";
 
 interface BillingReport {
   school_id: number;
@@ -29,9 +28,15 @@ export default function BillingAndRevenue() {
 
   const loadReport = async () => {
     setLoading(true);
-    const data = await generateBillingReport();
-    setReport(data);
-    setLoading(false);
+    try {
+      const response = await fetch("/api/billing/report");
+      const data = await response.json();
+      setReport(data);
+    } catch (error) {
+      console.error("Error loading billing report:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredReport = report.filter((item) => {

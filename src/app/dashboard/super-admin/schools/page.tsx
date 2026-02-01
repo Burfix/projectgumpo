@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { getSchools } from "@/lib/schools";
 
 interface School {
   id: number;
@@ -28,10 +27,16 @@ export default function SchoolsManagement() {
 
   const loadSchools = async () => {
     setLoading(true);
-    const data = await getSchools();
-    setSchools(data);
-    setFilteredSchools(data);
-    setLoading(false);
+    try {
+      const response = await fetch("/api/schools");
+      const data = await response.json();
+      setSchools(data);
+      setFilteredSchools(data);
+    } catch (error) {
+      console.error("Error loading schools:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
