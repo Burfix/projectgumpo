@@ -111,6 +111,12 @@ export default async function AdminDashboard() {
                 >
                   School Settings
                 </Link>
+                <Link
+                  href="/dashboard/admin/billing"
+                  className="block w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium text-center"
+                >
+                  Billing & Subscription
+                </Link>
               </div>
             </div>
           </div>
