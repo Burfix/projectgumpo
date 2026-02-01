@@ -11,10 +11,10 @@ export default function ConfigureEmailsPage() {
     alertThreshold: 5,
   });
 
-  const handleToggle = (key: string) => {
+  const handleToggle = (key: keyof typeof emailTemplates) => {
     setEmailTemplates({
       ...emailTemplates,
-      [key]: !emailTemplates[key],
+      [key]: typeof emailTemplates[key] === "boolean" ? !emailTemplates[key] : emailTemplates[key],
     });
   };
 
