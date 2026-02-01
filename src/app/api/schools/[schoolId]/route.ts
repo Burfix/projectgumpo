@@ -3,10 +3,11 @@ import { getSchoolById } from "@/lib/schools";
 
 export async function GET(
   request: Request,
-  { params }: { params: { schoolId: string } }
+  { params }: { params: Promise<{ schoolId: string }> }
 ) {
   try {
-    const school = await getSchoolById(parseInt(params.schoolId));
+    const { schoolId } = await params;
+    const school = await getSchoolById(parseInt(schoolId));
     if (!school) {
       return NextResponse.json({ error: "School not found" }, { status: 404 });
     }

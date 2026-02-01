@@ -3,11 +3,11 @@ import { getSubscriptionBySchoolId, getAddOnsBySubscriptionId } from "@/lib/scho
 
 export async function GET(
   request: Request,
-  { params }: { params: { schoolId: string } }
+  { params }: { params: Promise<{ schoolId: string }> }
 ) {
   try {
-    const schoolId = parseInt(params.schoolId);
-    const subscription = await getSubscriptionBySchoolId(schoolId);
+    const { schoolId } = await params;
+    const subscription = await getSubscriptionBySchoolId(parseInt(schoolId));
     
     if (!subscription) {
       return NextResponse.json({ subscription: null, addOns: [] });
