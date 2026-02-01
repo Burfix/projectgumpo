@@ -113,8 +113,20 @@ export default async function SuperAdminDashboard() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">System Actions</h3>
               <div className="space-y-3">
                 <Link
-                  href="/dashboard/super-admin/users"
+                  href="/dashboard/super-admin/schools"
+                  className="flex w-full items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+                >
+                  Schools Management
+                </Link>
+                <Link
+                  href="/dashboard/super-admin/billing"
                   className="flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                >
+                  Billing & Revenue
+                </Link>
+                <Link
+                  href="/dashboard/super-admin/users"
+                  className="flex w-full items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
                 >
                   View All Users
                 </Link>
