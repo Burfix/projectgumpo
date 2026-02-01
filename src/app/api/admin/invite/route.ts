@@ -19,6 +19,21 @@ export async function POST(req: Request) {
 
     const admin = createAdminClient();
 
+    // Check invite count for this email
+    const { data: existingInvites, error: countError } = await admin
+      .from("invites")
+      .select("count", { count: "exact" })
+      .eq("email", email);
+
+    const inviteCount = existingInvites?.length ?? 0;
+
+    if (inviteCount >= 3) {
+      return NextResponse.json(
+        { error: `Maximum 3 invites allowed for ${email}. Limit reached.` },
+        { status: 400 }
+      );
+    }
+
     const siteUrl =
       process.env.NEXT_PUBLIC_SITE_URL ?? "https://projectgumpo.space";
 
@@ -32,6 +47,14 @@ export async function POST(req: Request) {
     }
 
     if (data?.user) {
+      // Store invite in database
+      await admin.from("invites").insert({
+        email,
+        role,
+        user_id: data.user.id,
+      });
+
+      // Also upsert user record
       await admin
         .from("users")
         .upsert(
@@ -44,7 +67,7 @@ export async function POST(req: Request) {
         );
     }
 
-    return NextResponse.json({ ok: true, userId: data?.user?.id ?? null });
+    return NextResponse.json({ ok: true, userId: data?.user?.id ?? null, inviteCount: inviteCount + 1 });
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message ?? "Invite failed" },
