@@ -86,6 +86,30 @@ export default async function SuperAdminDashboard() {
           {/* Quick Actions */}
           <div>
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">View Role Dashboards</h3>
+              <div className="space-y-3">
+                <Link
+                  href="/dashboard/parent"
+                  className="flex w-full items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+                >
+                  Parent Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/teacher"
+                  className="flex w-full items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                >
+                  Teacher Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/admin"
+                  className="flex w-full items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
+                >
+                  Admin Dashboard
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">System Actions</h3>
               <div className="space-y-3">
                 <Link
