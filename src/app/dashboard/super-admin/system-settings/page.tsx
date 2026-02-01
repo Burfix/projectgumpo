@@ -24,7 +24,7 @@ export default async function SystemSettingsPage() {
             </p>
             <Link
               href="/dashboard/super-admin/system-settings/manage-roles"
-              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+              className="inline-block px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
             >
               Manage roles
             </Link>
@@ -36,7 +36,7 @@ export default async function SystemSettingsPage() {
             </p>
             <Link
               href="/dashboard/super-admin/system-settings/configure-emails"
-              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+              className="inline-block px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700"
             >
               Configure emails
             </Link>
@@ -48,7 +48,7 @@ export default async function SystemSettingsPage() {
             </p>
             <Link
               href="/dashboard/super-admin/system-settings/update-retention"
-              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+              className="inline-block px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700"
             >
               Update retention
             </Link>
@@ -60,7 +60,7 @@ export default async function SystemSettingsPage() {
             </p>
             <Link
               href="/dashboard/super-admin/system-settings/view-integrations"
-              className="inline-block px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
+              className="inline-block px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
             >
               View integrations
             </Link>
