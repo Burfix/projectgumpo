@@ -26,11 +26,10 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Real-time visibility into your child’s day — at school or with a caregiver.
+            Know how your child's day went without having to ask.
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Project Goose delivers peace of mind with verified updates, secure check-ins, and clear
-            communication — plus hands-on onboarding for every school.
+            Project Goose delivers peace of mind with verified updates from staff, secure check-ins, and clear communication plus hands-on onboarding for every school.
           </p>
           <div className="flex gap-4">
             <Link
