@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { role },
-      redirectTo: `${siteUrl}/auth/signup`,
+      redirectTo: `${siteUrl}/auth/callback?next=/dashboard/parent`,
     });
 
     if (error) {
