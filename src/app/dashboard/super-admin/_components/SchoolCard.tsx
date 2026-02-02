@@ -22,22 +22,6 @@ export default function SchoolCard({ school }: SchoolCardProps) {
             </p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <span
-            className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-              school.status === "Active"
-                ? "bg-green-100 text-green-800"
-                : school.status === "Trial"
-                ? "bg-blue-100 text-blue-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {school.status}
-          </span>
-          <span className="text-xs text-gray-500 font-medium">
-            {school.subscription_tier}
-          </span>
-        </div>
       </div>
 
       {/* User and Children Counts */}

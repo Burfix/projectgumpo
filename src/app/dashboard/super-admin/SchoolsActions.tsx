@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CreateSchoolInput } from "@/types/schools";
 
 interface SchoolsActionsProps {
   onSchoolAdded?: () => void;
@@ -11,11 +10,9 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<CreateSchoolInput>({
+  const [formData, setFormData] = useState({
     name: "",
     location: "",
-    subscription_tier: "Starter",
-    account_status: "Trial",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,8 +30,6 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
         body: JSON.stringify({
           name: formData.name,
           location: formData.location || null,
-          subscription_tier: formData.subscription_tier || "Starter",
-          account_status: formData.account_status || "Trial",
         }),
       });
 
@@ -51,8 +46,6 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
       setFormData({
         name: "",
         location: "",
-        subscription_tier: "Starter",
-        account_status: "Trial",
       });
 
       // Show success message
@@ -143,45 +136,6 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="e.g., Cape Town"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subscription Tier
-                </label>
-                <select
-                  value={formData.subscription_tier}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      subscription_tier: e.target.value as "Starter" | "Growth" | "Professional" | "Enterprise",
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="Starter">Starter</option>
-                  <option value="Growth">Growth</option>
-                  <option value="Professional">Professional</option>
-                  <option value="Enterprise">Enterprise</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account Status
-                </label>
-                <select
-                  value={formData.account_status}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      account_status: e.target.value as "Active" | "Trial" | "Suspended",
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="Trial">Trial</option>
-                  <option value="Active">Active</option>
-                  <option value="Suspended">Suspended</option>
-                </select>
               </div>
               <div className="flex gap-3 pt-4">
                 <button
