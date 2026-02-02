@@ -2,7 +2,12 @@ import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 
 export default async function AssignTeacherToClassPage() {
-  await protectRoute(["ADMIN", "SUPER_ADMIN"]);
+  try {
+    await protectRoute(["ADMIN", "SUPER_ADMIN"]);
+  } catch (error) {
+    console.error("Auth error:", error);
+    throw error;
+  }
 
   const teachers = [
     { name: "Ms. Sarah", email: "sarah@school.com", assigned: 1 },
