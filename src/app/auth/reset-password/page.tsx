@@ -4,17 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-function parseHashParams(hash: string): Record<string, string> {
-  if (!hash) return {};
-  const cleaned = hash.startsWith("#") ? hash.slice(1) : hash;
-  const params = new URLSearchParams(cleaned);
-  const result: Record<string, string> = {};
-  params.forEach((value, key) => {
-    result[key] = value;
-  });
-  return result;
-}
-
 export default function ResetPasswordPage() {
   const [ready, setReady] = React.useState(false);
   const [password, setPassword] = React.useState("");
@@ -24,25 +13,18 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = React.useState(false);
 
   React.useEffect(() => {
-    async function initSession() {
-      const hashParams = parseHashParams(window.location.hash);
-      const queryParams = new URLSearchParams(window.location.search);
-      const accessToken =
-        queryParams.get("access_token") ?? hashParams.access_token ?? "";
-      const refreshToken =
-        queryParams.get("refresh_token") ?? hashParams.refresh_token ?? "";
-
-      if (accessToken && refreshToken) {
-        await supabaseBrowser.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+    async function checkSession() {
+      // Check if user has an active session
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      
+      if (!session) {
+        setError("Authentication session is missing. Please click the reset link from your email again.");
       }
-
+      
       setReady(true);
     }
 
-    initSession();
+    checkSession();
   }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
