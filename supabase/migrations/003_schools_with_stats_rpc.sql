@@ -4,7 +4,7 @@
 -- Create the RPC function
 CREATE OR REPLACE FUNCTION get_schools_with_stats()
 RETURNS TABLE (
-  id UUID,
+  id BIGINT,
   name TEXT,
   location TEXT,
   status TEXT,

@@ -4,7 +4,7 @@ export type SchoolStatus = "Active" | "Trial" | "Suspended";
 export type SubscriptionTier = "Starter" | "Growth" | "Professional" | "Enterprise";
 
 export interface School {
-  id: string;
+  id: number;
   name: string;
   location: string | null;
   status: SchoolStatus;

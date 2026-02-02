@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { SchoolWithStats, SchoolsStats } from "@/types/schools";
 import SchoolsActions from "./SchoolsActions";
 import SchoolCard from "./_components/SchoolCard";
@@ -20,44 +19,20 @@ export default function SchoolsManagement() {
 
   useEffect(() => {
     loadData();
-    
-    // Set up realtime subscription for schools changes
-    const supabase = supabaseBrowser;
-    const channel = supabase
-      .channel('schools-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'schools'
-        },
-        () => {
-          console.log('Schools table changed, reloading data...');
-          loadData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const loadData = async () => {
     try {
       setError(null);
-      const supabase = supabaseBrowser;
 
-      // Call the RPC function to get schools with stats
-      const { data: schoolsData, error: schoolsError } = await supabase
-        .rpc('get_schools_with_stats');
-
-      if (schoolsError) {
-        console.error("Error loading schools:", schoolsError);
-        setError("Failed to load schools. Please try again.");
-        return;
+      // Call the API endpoint to get schools with stats
+      const response = await fetch("/api/schools/with-stats");
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch schools");
       }
+
+      const schoolsData = await response.json();
 
       // Transform the data to match our types
       const transformedSchools: SchoolWithStats[] = (schoolsData || []).map((school: any) => ({

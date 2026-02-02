@@ -2,8 +2,8 @@
 
 -- Create children table
 CREATE TABLE IF NOT EXISTS children (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  id BIGSERIAL PRIMARY KEY,
+  school_id BIGINT REFERENCES schools(id) ON DELETE CASCADE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   date_of_birth DATE,
