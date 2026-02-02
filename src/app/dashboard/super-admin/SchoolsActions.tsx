@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-export default function SchoolsActions() {
+interface SchoolsActionsProps {
+  onSchoolAdded?: () => void;
+}
+
+export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = {}) {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -40,6 +44,11 @@ export default function SchoolsActions() {
         account_status: "Trial",
       });
       alert("School created successfully!");
+      
+      // Trigger parent refresh
+      if (onSchoolAdded) {
+        onSchoolAdded();
+      }
     } catch (err: any) {
       setError(err?.message ?? "Failed to create school");
       console.error("Error:", err);

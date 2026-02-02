@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
-import SchoolsActions from "./SchoolsActions";
+import SchoolsManagement from "./SchoolsManagement";
 
 export default async function SuperAdminDashboard() {
   let user;
@@ -52,42 +52,7 @@ export default async function SuperAdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Schools Management */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Schools Management</h2>
-                <SchoolsActions />
-              </div>
-              
-              {/* School Statistics Summary */}
-              <div className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-blue-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-900">0</div>
-                    <div className="text-xs text-blue-700 mt-1">Children</div>
-                  </div>
-                  <div className="bg-emerald-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-emerald-900">0</div>
-                    <div className="text-xs text-emerald-700 mt-1">Parents</div>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-900">0</div>
-                    <div className="text-xs text-purple-700 mt-1">Teachers</div>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-orange-900">0</div>
-                    <div className="text-xs text-orange-700 mt-1">Admins</div>
-                  </div>
-                </div>
-
-                <div className="text-center py-8 text-gray-500">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <p className="text-sm font-medium">No schools added yet</p>
-                  <p className="text-xs mt-1">Click "+ Add School" to get started</p>
-                </div>
-              </div>
-            </div>
+            <SchoolsManagement />
           </div>
 
           {/* Quick Actions */}
