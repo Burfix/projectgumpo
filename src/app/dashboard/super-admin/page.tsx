@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
+import AddSchoolModal from "./AddSchoolModal";
 
 export default async function SuperAdminDashboard() {
   let user;
@@ -54,12 +55,7 @@ export default async function SuperAdminDashboard() {
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Schools Management</h2>
-                <Link
-                  href="/dashboard/super-admin/schools"
-                  className="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 inline-block"
-                >
-                  + Add School
-                </Link>
+                <AddSchoolModal />
               </div>
               <div className="divide-y divide-gray-200">
                 {[
