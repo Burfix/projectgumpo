@@ -57,33 +57,35 @@ export default async function SuperAdminDashboard() {
                 <h2 className="text-lg font-semibold text-gray-900">Schools Management</h2>
                 <SchoolsActions />
               </div>
-              <div className="divide-y divide-gray-200">
-                {[
-                  { name: "Sunshine Preschool", city: "Cape Town", users: 45, status: "Active", children: 120 },
-                  { name: "Happy Kids Daycare", city: "Johannesburg", users: 32, status: "Active", children: 85 },
-                  { name: "Little Learners Academy", city: "Durban", users: 28, status: "Active", children: 72 },
-                  { name: "Rainbow Education Center", city: "Pretoria", users: 24, status: "Paused", children: 60 },
-                ].map((school, i) => (
-                  <div key={i} className="px-6 py-4 hover:bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="font-semibold text-gray-900">{school.name}</p>
-                        <p className="text-sm text-gray-600">{school.city}</p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        school.status === 'Active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {school.status}
-                      </span>
-                    </div>
-                    <div className="flex gap-6 text-sm">
-                      <span className="text-gray-600">{school.users} users</span>
-                      <span className="text-gray-600">{school.children} children</span>
-                    </div>
+              
+              {/* School Statistics Summary */}
+              <div className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-900">0</div>
+                    <div className="text-xs text-blue-700 mt-1">Children</div>
                   </div>
-                ))}
+                  <div className="bg-emerald-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-emerald-900">0</div>
+                    <div className="text-xs text-emerald-700 mt-1">Parents</div>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-900">0</div>
+                    <div className="text-xs text-purple-700 mt-1">Teachers</div>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-orange-900">0</div>
+                    <div className="text-xs text-orange-700 mt-1">Admins</div>
+                  </div>
+                </div>
+
+                <div className="text-center py-8 text-gray-500">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <p className="text-sm font-medium">No schools added yet</p>
+                  <p className="text-xs mt-1">Click "+ Add School" to get started</p>
+                </div>
               </div>
             </div>
           </div>
