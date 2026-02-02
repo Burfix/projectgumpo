@@ -20,7 +20,12 @@ const sampleLogs = [
 ];
 
 export default async function AuditLogsPage() {
-  await protectRoute(["SUPER_ADMIN"]);
+  try {
+    await protectRoute(["SUPER_ADMIN"]);
+  } catch (error) {
+    console.error("Auth error:", error);
+    throw error;
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">

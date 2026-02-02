@@ -2,7 +2,12 @@ import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 
 export default async function ViewIntegrationsPage() {
-  await protectRoute(["SUPER_ADMIN"]);
+  try {
+    await protectRoute(["SUPER_ADMIN"]);
+  } catch (error) {
+    console.error("Auth error:", error);
+    throw error;
+  }
 
   const integrations = [
     {

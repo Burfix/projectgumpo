@@ -4,7 +4,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import InviteUserForm from "./InviteUserForm";
 
 export default async function SuperAdminUsersPage() {
-  const user = await protectRoute(["SUPER_ADMIN"]);
+  let user;
+  try {
+    user = await protectRoute(["SUPER_ADMIN"]);
+  } catch (error) {
+    console.error("Auth error:", error);
+    throw error;
+  }
 
   let users:
     | { id: string; email: string | null; role: string | null; created_at?: string | null }[]

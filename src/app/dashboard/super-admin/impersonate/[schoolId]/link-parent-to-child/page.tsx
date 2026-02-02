@@ -6,7 +6,12 @@ export default async function LinkParentToChildImpersonated({
 }: {
   params: { schoolId: string };
 }) {
-  await protectRoute(["SUPER_ADMIN"]);
+  try {
+    await protectRoute(["SUPER_ADMIN"]);
+  } catch (error) {
+    console.error("Auth error:", error);
+    throw error;
+  }
 
   return (
     <div className="min-h-screen bg-stone-50">

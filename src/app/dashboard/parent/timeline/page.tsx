@@ -2,7 +2,13 @@ import { protectRoute } from "@/lib/auth/middleware";
 import Link from "next/link";
 
 export default async function ParentTimeline() {
-  const user = await protectRoute(["PARENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]);
+  let user;
+  try {
+    user = await protectRoute(["PARENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]);
+  } catch (error) {
+    console.error("Auth error:", error);
+    throw error;
+  }
 
   return (
     <main className="min-h-screen bg-stone-50">
