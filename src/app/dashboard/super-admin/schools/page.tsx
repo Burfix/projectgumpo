@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
 interface School {
@@ -15,7 +14,6 @@ interface School {
 }
 
 export default function SchoolsManagement() {
-  const searchParams = useSearchParams();
   const [schools, setSchools] = useState<School[]>([]);
   const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,12 +33,6 @@ export default function SchoolsManagement() {
   useEffect(() => {
     loadSchools();
   }, []);
-
-  useEffect(() => {
-    if (searchParams.get("new") === "1") {
-      setShowAddModal(true);
-    }
-  }, [searchParams]);
 
   const loadSchools = async () => {
     setLoading(true);
