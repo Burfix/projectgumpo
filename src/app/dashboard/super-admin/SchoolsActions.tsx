@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { CreateSchoolInput } from "@/types/schools";
 
 interface SchoolsActionsProps {
@@ -25,27 +24,26 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
     setIsSubmitting(true);
 
     try {
-      const supabase = supabaseBrowser;
+      // Use the API endpoint instead of direct Supabase client
+      const response = await fetch("/api/schools", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          location: formData.location || null,
+          subscription_tier: formData.subscription_tier || "Starter",
+          account_status: formData.account_status || "Trial",
+        }),
+      });
 
-      // Insert school directly using Supabase client
-      const { data, error: insertError } = await supabase
-        .from("schools")
-        .insert([
-          {
-            name: formData.name,
-            location: formData.location || null,
-            subscription_tier: formData.subscription_tier || "Starter",
-            account_status: formData.account_status || "Trial",
-          },
-        ])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Error creating school:", insertError);
-        throw new Error(insertError.message || "Failed to create school");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create school");
       }
 
+      const data = await response.json();
       console.log("School created successfully:", data);
 
       // Close modal and reset form
@@ -58,9 +56,9 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
       });
 
       // Show success message
-      alert(`School "${data.name}" added successfully!`);
+      alert(`School "${data[0]?.name || 'New school'}" added successfully!`);
 
-      // Trigger parent refresh (realtime will also trigger, but this is immediate)
+      // Trigger parent refresh
       if (onSchoolAdded) {
         onSchoolAdded();
       }

@@ -16,7 +16,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // Verify user is super admin
-    await protectApiRoute(["SUPER_ADMIN"]);
+    try {
+      await protectApiRoute(["SUPER_ADMIN"]);
+    } catch (authError) {
+      console.error("Auth error:", authError);
+      return NextResponse.json(
+        { error: "Unauthorized - only super admins can create schools" },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const { name, location, subscription_tier, account_status } = body;
@@ -30,13 +38,13 @@ export async function POST(request: Request) {
 
     const supabase = await createAdminClient();
 
-    // Create school in database
+    // Create school in database with explicit column mapping
     const { data, error } = await supabase
       .from("schools")
       .insert([
         {
-          name,
-          location: location || null,
+          name: name.trim(),
+          location: location ? location.trim() : null,
           subscription_tier: subscription_tier || "Starter",
           account_status: account_status || "Trial",
         },
@@ -44,9 +52,16 @@ export async function POST(request: Request) {
       .select();
 
     if (error) {
-      console.error("Error creating school:", error);
+      console.error("Supabase error:", error);
       return NextResponse.json(
-        { error: "Failed to create school" },
+        { error: error.message || "Failed to create school" },
+        { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { error: "School created but no data returned" },
         { status: 500 }
       );
     }
@@ -55,8 +70,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error in POST /api/schools:", error);
     return NextResponse.json(
-      { error: "Unauthorized or invalid request" },
-      { status: 403 }
+      { error: (error as Error).message || "Internal server error" },
+      { status: 500 }
     );
   }
 }
