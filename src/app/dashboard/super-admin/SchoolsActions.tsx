@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase/client";
+import { CreateSchoolInput } from "@/types/schools";
 
 interface SchoolsActionsProps {
   onSchoolAdded?: () => void;
@@ -10,7 +12,7 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateSchoolInput>({
     name: "",
     location: "",
     subscription_tier: "Starter",
@@ -23,19 +25,30 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/schools", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const supabase = supabaseBrowser;
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create school");
+      // Insert school directly using Supabase client
+      const { data, error: insertError } = await supabase
+        .from("schools")
+        .insert([
+          {
+            name: formData.name,
+            location: formData.location || null,
+            subscription_tier: formData.subscription_tier || "Starter",
+            account_status: formData.account_status || "Trial",
+          },
+        ])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Error creating school:", insertError);
+        throw new Error(insertError.message || "Failed to create school");
       }
 
+      console.log("School created successfully:", data);
+
+      // Close modal and reset form
       setShowModal(false);
       setFormData({
         name: "",
@@ -43,9 +56,11 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
         subscription_tier: "Starter",
         account_status: "Trial",
       });
-      alert("School created successfully!");
-      
-      // Trigger parent refresh
+
+      // Show success message
+      alert(`School "${data.name}" added successfully!`);
+
+      // Trigger parent refresh (realtime will also trigger, but this is immediate)
       if (onSchoolAdded) {
         onSchoolAdded();
       }
@@ -140,7 +155,7 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      subscription_tier: e.target.value,
+                      subscription_tier: e.target.value as "Starter" | "Growth" | "Professional" | "Enterprise",
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -160,7 +175,7 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      account_status: e.target.value,
+                      account_status: e.target.value as "Active" | "Trial" | "Suspended",
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
