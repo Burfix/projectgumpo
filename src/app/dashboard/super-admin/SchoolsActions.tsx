@@ -51,13 +51,17 @@ export default function SchoolsActions() {
   return (
     <>
       <button
-        onClick={() => {
-          console.log("Add School button clicked");
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Add School button clicked - setting showModal to true");
           setShowModal(true);
         }}
-        className="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 active:bg-green-800"
+        className="relative z-20 inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 active:bg-green-800 transition-colors cursor-pointer"
       >
-        + Add School
+        <span>+</span>
+        <span>Add School</span>
       </button>
 
       {showModal && (
