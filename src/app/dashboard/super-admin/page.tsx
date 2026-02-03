@@ -2,6 +2,7 @@ import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 import SchoolsManagement from "./SchoolsManagement";
 import SystemCountersCard from "./_components/SystemCountersCard";
+import RecentActivityLive from "./_components/RecentActivityLive";
 
 export default async function SuperAdminDashboard() {
   let user;
@@ -145,38 +146,8 @@ export default async function SuperAdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="mt-8 bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {[
-              { time: "2024-01-30 14:23", event: "New school registered: Happy Kids Daycare", type: "School" },
-              { time: "2024-01-30 12:15", event: "User password reset requested: john@sunshine.co.za", type: "User" },
-              { time: "2024-01-30 10:45", event: "Database backup completed successfully", type: "System" },
-              { time: "2024-01-29 16:30", event: "14 new users invited to Sunshine Preschool", type: "User" },
-              { time: "2024-01-29 13:20", event: "Bulk data import: 245 children records", type: "Data" },
-            ].map((item, i) => (
-              <div key={i} className="px-6 py-4 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex-grow">
-                    <p className="text-sm text-gray-900">{item.event}</p>
-                    <p className="text-xs text-gray-500 mt-1">{item.time}</p>
-                  </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    item.type === 'System' ? 'bg-blue-100 text-blue-800' :
-                    item.type === 'School' ? 'bg-green-100 text-green-800' :
-                    item.type === 'User' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {item.type}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Recent Activity - Live Data */}
+        <RecentActivityLive />
       </div>
     </main>
   );

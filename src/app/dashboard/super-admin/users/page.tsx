@@ -2,6 +2,7 @@ import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import InviteUserForm from "./InviteUserForm";
+import BulkInviteForm from "./BulkInviteForm";
 
 export default async function SuperAdminUsersPage() {
   let user;
@@ -48,9 +49,36 @@ export default async function SuperAdminUsersPage() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Tabs */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="flex border-b border-gray-200">
+            <button
+              className="flex-1 px-6 py-4 text-left font-medium text-gray-900 bg-blue-50 border-b-2 border-blue-600"
+            >
+              📝 Single Invite
+            </button>
+            <button
+              className="flex-1 px-6 py-4 text-left font-medium text-gray-600 hover:bg-gray-50"
+            >
+              📤 Bulk Invite
+            </button>
+          </div>
+          
+          {/* Tab Content */}
+          <div className="p-6">
+            <InviteUserForm />
+          </div>
+        </div>
+
+        {/* Bulk Invite Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Invite a user</h2>
-          <InviteUserForm />
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Bulk Invite Users</h2>
+            <p className="text-sm text-gray-600">
+              Efficiently invite multiple users at once. Upload a CSV file or paste data directly.
+            </p>
+          </div>
+          <BulkInviteForm />
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
