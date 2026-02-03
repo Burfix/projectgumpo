@@ -6,10 +6,44 @@ import Link from "next/link";
 export default function BookDemoPage() {
   const [submitted, setSubmitted] = React.useState(false);
   const [audience, setAudience] = React.useState<"school" | "parent">("school");
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [school, setSchool] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitted(true);
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/book-demo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          audience,
+          name,
+          email,
+          phone,
+          school: audience === "school" ? school : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Something went wrong. Please try again.");
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -33,6 +67,9 @@ export default function BookDemoPage() {
             </div>
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">
+              {error ? (
+                <p className="text-sm text-red-600">{error}</p>
+              ) : null}
               <div>
                 <label className="block text-sm text-gray-700 mb-2">I am a</label>
                 <div className="flex gap-3">
@@ -62,29 +99,56 @@ export default function BookDemoPage() {
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Full name</label>
-                <input className="w-full border rounded px-3 py-2" required />
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Email</label>
-                <input className="w-full border rounded px-3 py-2" type="email" required />
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Phone</label>
-                <input className="w-full border rounded px-3 py-2" type="tel" required />
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
               {audience === "school" ? (
                 <>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">School / Center</label>
-                    <input className="w-full border rounded px-3 py-2" required />
+                    <input
+                      className="w-full border rounded px-3 py-2"
+                      required
+                      value={school}
+                      onChange={(e) => setSchool(e.target.value)}
+                    />
                   </div>
                 </>
               ) : null}
               <button
                 type="submit"
-                className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                disabled={loading}
+                className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {audience === "school" ? "Request demo" : "Request parent walkthrough"}
+                {loading
+                  ? "Sending..."
+                  : audience === "school"
+                    ? "Request demo"
+                    : "Request parent walkthrough"}
               </button>
             </form>
           )}

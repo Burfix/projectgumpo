@@ -39,6 +39,7 @@ export default function SchoolsManagement() {
         id: school.id,
         name: school.name,
         location: school.location,
+        school_type: school.school_type,
         status: school.status,
         subscription_tier: school.subscription_tier,
         created_at: school.created_at,
@@ -72,6 +73,10 @@ export default function SchoolsManagement() {
 
   const handleSchoolAdded = () => {
     loadData();
+    // Also reload system counters in the parent dashboard
+    if (typeof window !== "undefined" && (window as any).__reloadSystemCounters) {
+      (window as any).__reloadSystemCounters();
+    }
   };
 
   const handleRetry = () => {

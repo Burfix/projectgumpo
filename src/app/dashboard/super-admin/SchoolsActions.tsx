@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SchoolType } from "@/types/schools";
 
 interface SchoolsActionsProps {
   onSchoolAdded?: () => void;
@@ -10,15 +11,30 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    name: "",
-    location: "",
-  });
+    const [formData, setFormData] = useState({
+      name: "",
+      city: "",
+      type: "" as SchoolType | "",
+    });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
+
+    // Validation
+    if (!formData.name.trim()) {
+      setError("School name is required");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.city.trim()) {
+      setError("City is required");
+      setIsSubmitting(false);
+      return;
+    }
+
 
     try {
       // Use the API endpoint instead of direct Supabase client
@@ -29,7 +45,8 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
         },
         body: JSON.stringify({
           name: formData.name,
-          location: formData.location || null,
+          city: formData.city,
+          type: formData.type,
         }),
       });
 
@@ -45,7 +62,8 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
       setShowModal(false);
       setFormData({
         name: "",
-        location: "",
+        city: "",
+        type: "",
       });
 
       // Show success message
@@ -108,7 +126,7 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   School Name *
                 </label>
                 <input
@@ -118,24 +136,44 @@ export default function SchoolsActions({ onSchoolAdded }: SchoolsActionsProps = 
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-black placeholder-gray-500"
                   placeholder="e.g., Happy Kids Academy"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
+                <label className="block text-sm font-medium text-black mb-1">
+                  City *
                 </label>
                 <input
                   type="text"
-                  value={formData.location}
+                  required
+                  value={formData.city}
                   onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
+                    setFormData({ ...formData, city: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-black placeholder-gray-500"
                   placeholder="e.g., Cape Town"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  School Type *
+                </label>
+                <select
+                  required
+                  value={formData.type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, type: e.target.value as SchoolType })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-black bg-white"
+                >
+                  <option value="">Select a school type</option>
+                  <option value="Preschool">Preschool</option>
+                  <option value="Crèche">Crèche</option>
+                  <option value="Primary">Primary</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               <div className="flex gap-3 pt-4">
                 <button

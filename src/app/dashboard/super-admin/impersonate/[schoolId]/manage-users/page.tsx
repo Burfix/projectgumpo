@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
+import ManageUsersClient from "./ManageUsersClient";
 
 export default async function ManageUsersImpersonated({
   params,
@@ -21,14 +22,14 @@ export default async function ManageUsersImpersonated({
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-amber-600 rounded-full animate-pulse"></div>
             <p className="text-sm font-medium text-amber-900">
-              Viewing as Super Admin — School #{params.schoolId}
+              Viewing as Super Admin — <span className="font-bold">School</span>
             </p>
           </div>
           <Link
             href={`/dashboard/super-admin/impersonate/${params.schoolId}`}
             className="px-3 py-1 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700"
           >
-            Back to School Overview
+            Exit Impersonation
           </Link>
         </div>
       </div>
@@ -45,18 +46,11 @@ export default async function ManageUsersImpersonated({
           Manage Users
         </h1>
         <p className="text-stone-600 mb-8">
-          View and manage all users in this school
+          Create/update user assignments and allocate principals for this school.
+          All changes are audited and scoped to this school only.
         </p>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <p className="text-stone-600 mb-4">
-            TODO: Implement user management interface
-          </p>
-          <p className="text-sm text-stone-500">
-            This view reuses the admin dashboard logic but within the super admin
-            impersonation context.
-          </p>
-        </div>
+        <ManageUsersClient schoolId={params.schoolId} />
       </div>
     </div>
   );

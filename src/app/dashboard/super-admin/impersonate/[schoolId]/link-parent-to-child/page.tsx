@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
+import { getParentChildLinks } from "@/lib/actions";
+import LinkParentToChildForm from "./LinkParentToChildForm";
 
 export default async function LinkParentToChildImpersonated({
   params,
@@ -12,6 +14,12 @@ export default async function LinkParentToChildImpersonated({
     console.error("Auth error:", error);
     throw error;
   }
+
+  const schoolId = parseInt(params.schoolId);
+
+  // Load initial data server-side
+  const linksResult = await getParentChildLinks(schoolId);
+  const initialLinks = linksResult.success ? linksResult.data : [];
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -45,18 +53,10 @@ export default async function LinkParentToChildImpersonated({
           Link Parent to Child
         </h1>
         <p className="text-stone-600 mb-8">
-          Create parent-child relationships in this school
+          Create and manage parent-child relationships for this school
         </p>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <p className="text-stone-600 mb-4">
-            TODO: Implement parent-child linking form
-          </p>
-          <p className="text-sm text-stone-500">
-            This view reuses the admin dashboard logic but within the super admin
-            impersonation context.
-          </p>
-        </div>
+        <LinkParentToChildForm schoolId={schoolId} initialLinks={initialLinks as any} />
       </div>
     </div>
   );

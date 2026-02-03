@@ -16,11 +16,14 @@ export default function SchoolCard({ school }: SchoolCardProps) {
           <h3 className="font-semibold text-gray-900 text-base">
             {school.name}
           </h3>
-          {school.location && (
-            <p className="text-sm text-gray-600 mt-1">
-              📍 {school.location}
-            </p>
-          )}
+          <div className="flex flex-col gap-1 mt-1">
+              <p className="text-sm text-gray-600">
+                City: {school.city}
+              </p>
+              <p className="text-xs text-gray-500 font-medium">
+                Type: {school.type}
+              </p>
+          </div>
         </div>
       </div>
 
@@ -53,12 +56,9 @@ export default function SchoolCard({ school }: SchoolCardProps) {
       </div>
 
       {/* Total Summary */}
-      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
-        <span>{totalUsers} total users</span>
-        <span className="text-xs text-gray-400">
-          Created {new Date(school.created_at).toLocaleDateString()}
-        </span>
-      </div>
+        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+          <span>{totalUsers} total users</span>
+        </div>
     </div>
   );
 }

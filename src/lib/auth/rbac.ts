@@ -1,5 +1,5 @@
 
-export type UserRole = "SUPER_ADMIN" | "ADMIN" | "TEACHER" | "PARENT";
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "PRINCIPAL" | "TEACHER" | "PARENT";
 
 export interface RolePermissions {
   role: UserRole;
@@ -12,6 +12,7 @@ export interface RolePermissions {
   canManageClasses: boolean;
   canModifyGrades: boolean;
   canAccessSystemSettings: boolean;
+  canAllocatePrincipals: boolean;
   dashboardPath: string;
 }
 
@@ -28,6 +29,7 @@ const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageClasses: true,
     canModifyGrades: false,
     canAccessSystemSettings: true,
+    canAllocatePrincipals: true,
     dashboardPath: "/dashboard/super-admin",
   },
   ADMIN: {
@@ -41,6 +43,21 @@ const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageClasses: true,
     canModifyGrades: false,
     canAccessSystemSettings: false,
+    canAllocatePrincipals: false,
+    dashboardPath: "/dashboard/admin",
+  },
+  PRINCIPAL: {
+    role: "PRINCIPAL",
+    canManageUsers: true,
+    canAssignRoles: false,
+    canViewAllData: true,
+    canCreateAccounts: true,
+    canLinkParentsToChildren: true,
+    canLinkTeachersToClasses: true,
+    canManageClasses: true,
+    canModifyGrades: false,
+    canAccessSystemSettings: true,
+    canAllocatePrincipals: false,
     dashboardPath: "/dashboard/admin",
   },
   TEACHER: {
@@ -54,6 +71,7 @@ const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageClasses: true,
     canModifyGrades: true,
     canAccessSystemSettings: false,
+    canAllocatePrincipals: false,
     dashboardPath: "/dashboard/teacher",
   },
   PARENT: {
@@ -67,6 +85,7 @@ const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageClasses: false,
     canModifyGrades: false,
     canAccessSystemSettings: false,
+    canAllocatePrincipals: false,
     dashboardPath: "/dashboard/parent",
   },
 };
@@ -98,8 +117,8 @@ export function hasPermission(
 export function canAccessRoute(userRole: UserRole, route: string): boolean {
   const routeAccessMap: Record<string, UserRole[]> = {
     "/dashboard/super-admin": ["SUPER_ADMIN"],
-    "/dashboard/admin": ["SUPER_ADMIN", "ADMIN"],
-    "/dashboard/teacher": ["SUPER_ADMIN", "ADMIN", "TEACHER"],
+    "/dashboard/admin": ["SUPER_ADMIN", "ADMIN", "PRINCIPAL"],
+    "/dashboard/teacher": ["SUPER_ADMIN", "ADMIN", "PRINCIPAL", "TEACHER"],
     "/dashboard/parent": ["SUPER_ADMIN", "ADMIN", "TEACHER", "PARENT"],
   };
 
@@ -125,7 +144,7 @@ export function isRoleHigherThan(
   currentRole: UserRole,
   comparedToRole: UserRole
 ): boolean {
-  const hierarchy: UserRole[] = ["SUPER_ADMIN", "ADMIN", "TEACHER", "PARENT"];
+  const hierarchy: UserRole[] = ["SUPER_ADMIN", "ADMIN", "PRINCIPAL", "TEACHER", "PARENT"];
   const currentIndex = hierarchy.indexOf(currentRole);
   const comparedIndex = hierarchy.indexOf(comparedToRole);
 
@@ -156,7 +175,8 @@ export function canManageRole(userRole: UserRole, targetRole: UserRole): boolean
 export function getRoleDescription(role: UserRole): string {
   const descriptions: Record<UserRole, string> = {
     SUPER_ADMIN: "System Administrator - Full system access and user management",
-    ADMIN: "School Administrator/Principal - Institution-level management",
+    ADMIN: "School Administrator - Institution-level management",
+    PRINCIPAL: "School Principal - Full school management and operations",
     TEACHER: "Educator - Classroom management and student tracking",
     PARENT: "Guardian/Parent - Access to child's academic progress",
   };
@@ -168,12 +188,12 @@ export function getRoleDescription(role: UserRole): string {
  * Get all available roles
  */
 export function getAllRoles(): UserRole[] {
-  return ["SUPER_ADMIN", "ADMIN", "TEACHER", "PARENT"];
+  return ["SUPER_ADMIN", "ADMIN", "PRINCIPAL", "TEACHER", "PARENT"];
 }
 
 /**
  * Validate if a string is a valid role
  */
 export function isValidRole(role: unknown): role is UserRole {
-  return typeof role === "string" && ["SUPER_ADMIN", "ADMIN", "TEACHER", "PARENT"].includes(role);
+  return typeof role === "string" && ["SUPER_ADMIN", "ADMIN", "PRINCIPAL", "TEACHER", "PARENT"].includes(role);
 }

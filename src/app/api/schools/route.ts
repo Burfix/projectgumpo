@@ -27,67 +27,43 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, location, subscription_tier, account_status } = body;
+    const { name, city, type } = body;
 
-    if (!name) {
+    if (!name || !city || !type) {
       return NextResponse.json(
-        { error: "School name is required" },
+        { message: "All fields (name, city, type) are required." },
         { status: 400 }
       );
     }
 
     const supabase = await createAdminClient();
-
-    // Insert only the essential fields - let database defaults handle the rest
-    // This bypasses schema cache issues by not explicitly setting account_status
-    const insertPayload: any = {
+    const insertPayload = {
       name: name.trim(),
+      city: city.trim(),
+      type: type.trim(),
     };
-
-    if (location) {
-      insertPayload.location = location.trim();
-    }
-
-    if (subscription_tier) {
-      insertPayload.subscription_tier = subscription_tier;
-    }
-
-    // Only add account_status if explicitly provided and non-null
-    if (account_status) {
-      insertPayload.account_status = account_status;
-    }
-
-    console.log("Inserting school with payload:", insertPayload);
 
     const { data, error } = await supabase
       .from("schools")
       .insert(insertPayload)
-      .select("id, name, location, subscription_tier");
+      .select()
+      .single();
 
     if (error) {
-      console.error("Supabase error:", error);
       return NextResponse.json(
-        { error: error.message || "Failed to create school" },
+        { message: error.message, details: error.details, hint: error.hint },
+        { status: 400 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { message: "School created but no data returned" },
         { status: 500 }
       );
     }
 
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: "School created but no data returned" },
-        { status: 500 }
-      );
-    }
-
-    // Return the created school with defaults applied
-    return NextResponse.json({
-      ...data[0],
-      account_status: account_status || "Trial",
-      children_count: 0,
-      parents_count: 0,
-      teachers_count: 0,
-      admins_count: 0,
-    }, { status: 201 });
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/schools:", error);
     return NextResponse.json(

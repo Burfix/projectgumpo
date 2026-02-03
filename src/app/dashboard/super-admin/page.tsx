@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { protectRoute } from "@/lib/auth/middleware";
 import SchoolsManagement from "./SchoolsManagement";
+import SystemCountersCard from "./_components/SystemCountersCard";
 
 export default async function SuperAdminDashboard() {
   let user;
@@ -25,28 +26,7 @@ export default async function SuperAdminDashboard() {
 
       {/* Stats Grid */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm text-gray-600">Total Schools</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">24</p>
-            <p className="text-xs text-gray-500 mt-2">↑ 3 this month</p>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm text-gray-600">Active Users</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">1,248</p>
-            <p className="text-xs text-gray-500 mt-2">Across all schools</p>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm text-gray-600">Daily Logs</p>
-            <p className="text-3xl font-bold text-gray-900 mt-2">15.2K</p>
-            <p className="text-xs text-gray-500 mt-2">Last 24 hours</p>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm text-gray-600">System Health</p>
-            <p className="text-3xl font-bold text-green-600 mt-2">99.8%</p>
-            <p className="text-xs text-gray-500 mt-2">Uptime</p>
-          </div>
-        </div>
+        <SystemCountersCard />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

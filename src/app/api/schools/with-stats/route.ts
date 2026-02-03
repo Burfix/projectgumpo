@@ -39,6 +39,7 @@ export async function GET() {
           id: school.id,
           name: school.name,
           location: school.location,
+          school_type: school.school_type,
           status: school.account_status,
           subscription_tier: school.subscription_tier,
           children_count: childrenCount || 0,
