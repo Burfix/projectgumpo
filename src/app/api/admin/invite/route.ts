@@ -37,9 +37,20 @@ export async function POST(req: Request) {
     const siteUrl =
       process.env.NEXT_PUBLIC_SITE_URL ?? "https://projectgumpo.space";
 
+    const dashboardPath =
+      role === "SUPER_ADMIN"
+        ? "/dashboard/super-admin"
+        : role === "ADMIN" || role === "PRINCIPAL"
+          ? "/dashboard/admin"
+          : role === "TEACHER"
+            ? "/dashboard/teacher"
+            : "/dashboard/parent";
+
+    const nextPath = `/auth/reset-password?next=${encodeURIComponent(dashboardPath)}`;
+
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { role },
-      redirectTo: `${siteUrl}/auth/callback?next=/dashboard/parent`,
+      redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
     });
 
     if (error) {
