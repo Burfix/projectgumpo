@@ -2,6 +2,29 @@
 -- This migration creates all essential tables needed for Teacher and Parent features
 
 -- ====================
+-- 0. ENSURE USERS TABLE HAS SCHOOL_ID
+-- ====================
+DO $$
+BEGIN
+  -- Add school_id to users table if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'school_id'
+  ) THEN
+    -- First check if schools table exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'schools') THEN
+      ALTER TABLE public.users ADD COLUMN school_id BIGINT REFERENCES public.schools(id) ON DELETE SET NULL;
+      CREATE INDEX IF NOT EXISTS users_school_id_idx ON public.users(school_id);
+      RAISE NOTICE 'Added school_id column to users table';
+    ELSE
+      RAISE EXCEPTION 'schools table does not exist. Please run previous migrations first.';
+    END IF;
+  ELSE
+    RAISE NOTICE 'school_id column already exists in users table';
+  END IF;
+END $$;
+
+-- ====================
 -- 1. CLASSROOMS TABLE
 -- ====================
 CREATE TABLE IF NOT EXISTS public.classrooms (
