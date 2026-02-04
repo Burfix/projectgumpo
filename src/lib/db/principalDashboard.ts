@@ -61,9 +61,16 @@ export async function getPrincipalDashboardData(options?: {
     .eq("id", authUser.id)
     .single();
 
-  if (profileError || !profile) {
+  if (profileError) {
     console.error("Profile query error:", profileError);
-    throw new Error("User profile not found: " + (profileError?.message || "No profile"));
+    if (profileError.code === '42P01' || profileError.message?.includes('does not exist')) {
+      throw new Error("Database tables not found. Please run the COMPLETE_RESET.sql migration first.");
+    }
+    throw new Error("User profile not found: " + profileError.message);
+  }
+
+  if (!profile) {
+    throw new Error("User profile not found. Please ensure your account is properly set up in the users table.");
   }
 
   const role = profile.role as UserRole;
@@ -78,7 +85,7 @@ export async function getPrincipalDashboardData(options?: {
       : profile.school_id;
 
   if (!resolvedSchoolId) {
-    throw new Error("No school selected");
+    throw new Error("No school assigned to your account. Please contact your administrator or run the seed data script.");
   }
 
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
