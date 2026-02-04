@@ -27,7 +27,7 @@ export interface IncidentSummary {
 }
 
 export interface PrincipalDashboardData {
-  schoolId: number;
+  schoolId: string;
   stats: PrincipalDashboardStats;
   classrooms: ClassroomSummary[];
   incidents: IncidentSummary[];
@@ -39,16 +39,6 @@ function isMissingTableError(error?: { code?: string; message?: string }) {
   if (!error) return false;
   if (error.code && MISSING_TABLE_CODES.has(error.code)) return true;
   return Boolean(error.message && error.message.toLowerCase().includes("does not exist"));
-}
-
-function startOfToday() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-function endOfToday() {
-  const start = startOfToday();
-  return new Date(start.getTime() + 24 * 60 * 60 * 1000);
 }
 
 export async function getPrincipalDashboardData(options?: {
@@ -83,7 +73,7 @@ export async function getPrincipalDashboardData(options?: {
   const resolvedSchoolId =
     role === "SUPER_ADMIN"
       ? schoolIdParam
-        ? Number(schoolIdParam)
+        ? schoolIdParam
         : profile.school_id
       : profile.school_id;
 
@@ -91,8 +81,7 @@ export async function getPrincipalDashboardData(options?: {
     throw new Error("No school selected");
   }
 
-  const todayStart = startOfToday().toISOString();
-  const todayEnd = endOfToday().toISOString();
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
   const totalChildrenQuery = supabase
     .from("children")
@@ -129,7 +118,7 @@ export async function getPrincipalDashboardData(options?: {
 
   const incidentsQuery = supabase
     .from("incident_reports")
-    .select("id, title, status, reviewed_at, created_at, child:child_id (first_name, last_name, name)")
+    .select("id, incident_type, description, severity, reviewed_at, created_at, child:child_id (first_name, last_name)")
     .eq("school_id", resolvedSchoolId)
     .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .order("created_at", { ascending: false })
@@ -137,19 +126,10 @@ export async function getPrincipalDashboardData(options?: {
 
   const attendanceQuery = supabase
     .from("attendance_logs")
-    .select("id, status, created_at", { count: "exact" })
+    .select("id, status", { count: "exact" })
     .eq("school_id", resolvedSchoolId)
-    .gte("created_at", todayStart)
-    .lt("created_at", todayEnd)
+    .eq("date", today)
     .eq("status", "PRESENT");
-
-  const engagementEventsQuery = supabase
-    .from("app_events")
-    .select("parent_user_id, created_at")
-    .eq("school_id", resolvedSchoolId)
-    .eq("event_type", "APP_OPEN")
-    .gte("created_at", todayStart)
-    .lt("created_at", todayEnd);
 
   const [
     totalChildrenResult,
@@ -160,7 +140,6 @@ export async function getPrincipalDashboardData(options?: {
     teacherAssignmentsResult,
     incidentsResult,
     attendanceResult,
-    engagementEventsResult,
   ] = await Promise.all([
     totalChildrenQuery,
     teachersQuery,
@@ -170,7 +149,6 @@ export async function getPrincipalDashboardData(options?: {
     teacherAssignmentsQuery,
     incidentsQuery,
     attendanceQuery,
-    engagementEventsQuery,
   ]);
 
   // Log errors for debugging
@@ -209,21 +187,8 @@ export async function getPrincipalDashboardData(options?: {
 
   let parentEngagementPercent: number | null = null;
   let engagementNote: string | undefined;
-  if (engagementEventsResult.error && isMissingTableError(engagementEventsResult.error)) {
-    engagementNote = "Enable analytics to track";
-  } else if (engagementEventsResult.error) {
-    throw new Error(engagementEventsResult.error.message);
-  } else if (totalParents > 0) {
-    const events = engagementEventsResult.data ?? [];
-    const uniqueParents = new Set(
-      events
-        .map((event: { parent_user_id?: string | null }) => event.parent_user_id)
-        .filter(Boolean)
-    );
-    parentEngagementPercent = Math.round((uniqueParents.size / totalParents) * 100);
-  } else {
-    parentEngagementPercent = 0;
-  }
+  // Parent engagement tracking not yet implemented
+  engagementNote = "Enable analytics to track";
 
   const classroomsData = classroomsResult.error
     ? isMissingTableError(classroomsResult.error)
@@ -300,25 +265,25 @@ export async function getPrincipalDashboardData(options?: {
   const incidents: IncidentSummary[] = incidentsData.map(
     (incident: {
       id: number;
-      title?: string | null;
-      status?: string | null;
+      incident_type?: string | null;
+      description?: string | null;
+      severity?: string | null;
       reviewed_at?: string | null;
       created_at: string;
       child?:
-        | { first_name?: string | null; last_name?: string | null; name?: string | null }
-        | { first_name?: string | null; last_name?: string | null; name?: string | null }[]
+        | { first_name?: string | null; last_name?: string | null }
+        | { first_name?: string | null; last_name?: string | null }[]
         | null;
     }) => {
       const childRecord = Array.isArray(incident.child) ? incident.child[0] : incident.child;
       const childName =
-        childRecord?.name ||
         [childRecord?.first_name, childRecord?.last_name].filter(Boolean).join(" ") ||
         "Unknown Child";
-      const status = incident.reviewed_at || incident.status === "Reviewed" ? "Reviewed" : "Pending";
+      const status = incident.reviewed_at ? "Reviewed" : "Pending";
       return {
         id: incident.id,
         childName,
-        title: incident.title || "Incident",
+        title: incident.incident_type || "Incident",
         status,
         createdAt: incident.created_at,
       };
