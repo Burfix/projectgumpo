@@ -2,46 +2,25 @@
 -- This migration creates all essential tables needed for Teacher and Parent features
 
 -- ====================
--- 0. ADD SCHOOL_ID AND ROLE TO AUTH.USERS (Supabase Auth table)
+-- 0. ENSURE PUBLIC.USERS TABLE EXISTS WITH REQUIRED COLUMNS
 -- ====================
 DO $$
 BEGIN
-  -- Add school_id to auth.users (Supabase's auth table)
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'auth' AND table_name = 'users' AND column_name = 'school_id'
-  ) THEN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'schools') THEN
-      ALTER TABLE auth.users ADD COLUMN school_id BIGINT;
-      CREATE INDEX IF NOT EXISTS auth_users_school_id_idx ON auth.users(school_id);
-      RAISE NOTICE 'Added school_id column to auth.users table';
-    ELSE
-      RAISE EXCEPTION 'schools table does not exist. Please run previous migrations first.';
-    END IF;
+  -- Create public.users if it doesn't exist (profile table that extends auth.users)
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') THEN
+    CREATE TABLE public.users (
+      id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+      email TEXT,
+      role TEXT,
+      school_id BIGINT REFERENCES public.schools(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS users_school_id_idx ON public.users(school_id);
+    CREATE INDEX IF NOT EXISTS users_role_idx ON public.users(role);
+    RAISE NOTICE 'Created public.users table';
   ELSE
-    RAISE NOTICE 'school_id column already exists in auth.users table';
-  END IF;
-
-  -- Add role to auth.users if missing
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'auth' AND table_name = 'users' AND column_name = 'role'
-  ) THEN
-    ALTER TABLE auth.users ADD COLUMN role TEXT;
-    CREATE INDEX IF NOT EXISTS auth_users_role_idx ON auth.users(role);
-    RAISE NOTICE 'Added role column to auth.users table';
-  ELSE
-    RAISE NOTICE 'role column already exists in auth.users table';
-  END IF;
-END $$;
-
--- ====================
--- 0B. ENSURE PUBLIC.USERS HAS REQUIRED COLUMNS (if it exists separately)
--- ====================
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') THEN
-    -- Add school_id to public.users if missing
+    -- Add missing columns to existing public.users
     IF NOT EXISTS (
       SELECT 1 FROM information_schema.columns 
       WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'school_id'
@@ -49,6 +28,15 @@ BEGIN
       ALTER TABLE public.users ADD COLUMN school_id BIGINT REFERENCES public.schools(id) ON DELETE SET NULL;
       CREATE INDEX IF NOT EXISTS users_school_id_idx ON public.users(school_id);
       RAISE NOTICE 'Added school_id column to public.users table';
+    END IF;
+    
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'role'
+    ) THEN
+      ALTER TABLE public.users ADD COLUMN role TEXT;
+      CREATE INDEX IF NOT EXISTS users_role_idx ON public.users(role);
+      RAISE NOTICE 'Added role column to public.users table';
     END IF;
   END IF;
 END $$;
@@ -77,9 +65,9 @@ DROP POLICY IF EXISTS "Users can view classrooms in their school" ON public.clas
 CREATE POLICY "Users can view classrooms in their school" ON public.classrooms
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 -- ====================
@@ -87,7 +75,7 @@ CREATE POLICY "Users can view classrooms in their school" ON public.classrooms
 -- ====================
 CREATE TABLE IF NOT EXISTS public.teacher_classroom (
   id BIGSERIAL PRIMARY KEY,
-  teacher_id UUID NOT NULL, -- References auth.users(id)
+  teacher_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   classroom_id BIGINT NOT NULL REFERENCES public.classrooms(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
   assigned_at TIMESTAMPTZ DEFAULT now(),
@@ -106,9 +94,9 @@ DROP POLICY IF EXISTS "Users can view teacher assignments in their school" ON pu
 CREATE POLICY "Users can view teacher assignments in their school" ON public.teacher_classroom
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 -- ====================
@@ -151,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.attendance_logs (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL, -- References auth.users(id)
+  teacher_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   status TEXT NOT NULL CHECK (status IN ('PRESENT', 'ABSENT', 'LATE', 'SICK', 'EXCUSED')),
   notes TEXT,
@@ -172,16 +160,16 @@ DROP POLICY IF EXISTS "Users can view attendance in their school" ON public.atte
 CREATE POLICY "Users can view attendance in their school" ON public.attendance_logs
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 DROP POLICY IF EXISTS "Teachers can insert attendance" ON public.attendance_logs;
 CREATE POLICY "Teachers can insert attendance" ON public.attendance_logs
   FOR INSERT WITH CHECK (
     teacher_id = auth.uid() AND
-    school_id IN (SELECT school_id FROM auth.users WHERE id = auth.uid())
+    school_id IN (SELECT school_id FROM public.users WHERE id = auth.uid())
   );
 
 -- ====================
@@ -191,7 +179,7 @@ CREATE TABLE IF NOT EXISTS public.meal_logs (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL, -- References auth.users(id)
+  teacher_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   meal_type TEXT NOT NULL CHECK (meal_type IN ('BREAKFAST', 'LUNCH', 'SNACK', 'DINNER')),
   description TEXT, -- e.g., "Ate all vegetables, refused fruit"
   date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -210,16 +198,16 @@ DROP POLICY IF EXISTS "Users can view meals in their school" ON public.meal_logs
 CREATE POLICY "Users can view meals in their school" ON public.meal_logs
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 DROP POLICY IF EXISTS "Teachers can insert meals" ON public.meal_logs;
 CREATE POLICY "Teachers can insert meals" ON public.meal_logs
   FOR INSERT WITH CHECK (
     teacher_id = auth.uid() AND
-    school_id IN (SELECT school_id FROM auth.users WHERE id = auth.uid())
+    school_id IN (SELECT school_id FROM public.users WHERE id = auth.uid())
   );
 
 -- ====================
@@ -229,7 +217,7 @@ CREATE TABLE IF NOT EXISTS public.nap_logs (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL, -- References auth.users(id)
+  teacher_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ,
   duration_minutes INTEGER, -- Calculated when end_time is set
@@ -249,16 +237,16 @@ DROP POLICY IF EXISTS "Users can view naps in their school" ON public.nap_logs;
 CREATE POLICY "Users can view naps in their school" ON public.nap_logs
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 DROP POLICY IF EXISTS "Teachers can manage naps" ON public.nap_logs;
 CREATE POLICY "Teachers can manage naps" ON public.nap_logs
   FOR ALL USING (
     teacher_id = auth.uid() AND
-    school_id IN (SELECT school_id FROM auth.users WHERE id = auth.uid())
+    school_id IN (SELECT school_id FROM public.users WHERE id = auth.uid())
   );
 
 -- ====================
@@ -268,7 +256,7 @@ CREATE TABLE IF NOT EXISTS public.incident_reports (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL, -- References auth.users(id)
+  teacher_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   title TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('INJURY', 'BEHAVIORAL', 'HEALTH', 'OTHER')),
   description TEXT NOT NULL,
@@ -293,16 +281,16 @@ DROP POLICY IF EXISTS "Users can view incidents in their school" ON public.incid
 CREATE POLICY "Users can view incidents in their school" ON public.incident_reports
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 DROP POLICY IF EXISTS "Teachers can create incidents" ON public.incident_reports;
 CREATE POLICY "Teachers can create incidents" ON public.incident_reports
   FOR INSERT WITH CHECK (
     teacher_id = auth.uid() AND
-    school_id IN (SELECT school_id FROM auth.users WHERE id = auth.uid())
+    school_id IN (SELECT school_id FROM public.users WHERE id = auth.uid())
   );
 
 -- ====================
@@ -312,7 +300,7 @@ CREATE TABLE IF NOT EXISTS public.daily_activities (
   id BIGSERIAL PRIMARY KEY,
   classroom_id BIGINT NOT NULL REFERENCES public.classrooms(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL, -- References auth.users(id)
+  teacher_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   activity_name TEXT NOT NULL, -- e.g., "Morning Circle", "Art Time"
   description TEXT, -- e.g., "Painted with watercolors, created butterfly art"
   activity_time TIME NOT NULL,
@@ -332,16 +320,16 @@ DROP POLICY IF EXISTS "Users can view activities in their school" ON public.dail
 CREATE POLICY "Users can view activities in their school" ON public.daily_activities
   FOR SELECT USING (
     school_id IN (
-      SELECT school_id FROM auth.users WHERE id = auth.uid()
+      SELECT school_id FROM public.users WHERE id = auth.uid()
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 DROP POLICY IF EXISTS "Teachers can create activities" ON public.daily_activities;
 CREATE POLICY "Teachers can create activities" ON public.daily_activities
   FOR INSERT WITH CHECK (
     teacher_id = auth.uid() AND
-    school_id IN (SELECT school_id FROM auth.users WHERE id = auth.uid())
+    school_id IN (SELECT school_id FROM public.users WHERE id = auth.uid())
   );
 
 -- ====================
@@ -349,7 +337,7 @@ CREATE POLICY "Teachers can create activities" ON public.daily_activities
 -- ====================
 CREATE TABLE IF NOT EXISTS public.parent_child (
   id BIGSERIAL PRIMARY KEY,
-  parent_id UUID NOT NULL, -- References auth.users(id)
+  parent_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   relationship TEXT DEFAULT 'Parent', -- Parent, Guardian, Emergency Contact
   is_primary BOOLEAN DEFAULT true,
@@ -369,11 +357,11 @@ CREATE POLICY "Users can view their relationships" ON public.parent_child
   FOR SELECT USING (
     parent_id = auth.uid() OR
     EXISTS (
-      SELECT 1 FROM auth.users u
+      SELECT 1 FROM public.users u
       JOIN public.children c ON c.school_id = u.school_id
       WHERE u.id = auth.uid() AND c.id = child_id
     ) OR
-    EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+    EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
   );
 
 -- ====================
@@ -381,8 +369,8 @@ CREATE POLICY "Users can view their relationships" ON public.parent_child
 -- ====================
 CREATE TABLE IF NOT EXISTS public.messages (
   id BIGSERIAL PRIMARY KEY,
-  sender_id UUID NOT NULL, -- References auth.users(id)
-  recipient_id UUID NOT NULL, -- References auth.users(id)
+  sender_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
+  recipient_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
   child_id BIGINT REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
   subject TEXT,
@@ -405,7 +393,7 @@ CREATE POLICY "Users can view their messages" ON public.messages
     sender_id = auth.uid() OR
     recipient_id = auth.uid() OR
     EXISTS (
-      SELECT 1 FROM auth.users u 
+      SELECT 1 FROM public.users u 
       WHERE u.id = auth.uid() 
       AND u.role IN ('ADMIN', 'SUPER_ADMIN') 
       AND u.school_id = school_id
@@ -416,7 +404,7 @@ DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
 CREATE POLICY "Users can send messages" ON public.messages
   FOR INSERT WITH CHECK (
     sender_id = auth.uid() AND
-    school_id IN (SELECT school_id FROM auth.users WHERE id = auth.uid())
+    school_id IN (SELECT school_id FROM public.users WHERE id = auth.uid())
   );
 
 -- ====================
