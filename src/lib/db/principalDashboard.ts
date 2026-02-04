@@ -118,7 +118,7 @@ export async function getPrincipalDashboardData(options?: {
 
   const incidentsQuery = supabase
     .from("incident_reports")
-    .select("id, incident_type, description, severity, reviewed_at, created_at, child:child_id (first_name, last_name)")
+    .select("id, incident_type, description, severity, created_at, child:child_id (first_name, last_name)")
     .eq("school_id", resolvedSchoolId)
     .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .order("created_at", { ascending: false })
@@ -268,7 +268,6 @@ export async function getPrincipalDashboardData(options?: {
       incident_type?: string | null;
       description?: string | null;
       severity?: string | null;
-      reviewed_at?: string | null;
       created_at: string;
       child?:
         | { first_name?: string | null; last_name?: string | null }
@@ -279,7 +278,8 @@ export async function getPrincipalDashboardData(options?: {
       const childName =
         [childRecord?.first_name, childRecord?.last_name].filter(Boolean).join(" ") ||
         "Unknown Child";
-      const status = incident.reviewed_at ? "Reviewed" : "Pending";
+      // All incidents are pending by default since we don't have reviewed_at field yet
+      const status = "Pending";
       return {
         id: incident.id,
         childName,
