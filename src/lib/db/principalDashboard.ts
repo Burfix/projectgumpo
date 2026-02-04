@@ -62,7 +62,7 @@ export async function getPrincipalDashboardData(options?: {
   } = await supabase.auth.getUser();
 
   if (authError || !authUser) {
-    throw new Error("Unauthorized");
+    throw new Error("Unauthorized: " + (authError?.message || "No auth user"));
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -72,7 +72,8 @@ export async function getPrincipalDashboardData(options?: {
     .single();
 
   if (profileError || !profile) {
-    throw new Error("User profile not found");
+    console.error("Profile query error:", profileError);
+    throw new Error("User profile not found: " + (profileError?.message || "No profile"));
   }
 
   const role = profile.role as UserRole;
@@ -171,6 +172,23 @@ export async function getPrincipalDashboardData(options?: {
     attendanceQuery,
     engagementEventsQuery,
   ]);
+
+  // Log errors for debugging
+  if (totalChildrenResult.error) {
+    console.error("totalChildren error:", totalChildrenResult.error);
+  }
+  if (classroomsResult.error) {
+    console.error("classrooms error:", classroomsResult.error);
+  }
+  if (childrenByClassroomResult.error) {
+    console.error("childrenByClassroom error:", childrenByClassroomResult.error);
+  }
+  if (teacherAssignmentsResult.error) {
+    console.error("teacherAssignments error:", teacherAssignmentsResult.error);
+  }
+  if (incidentsResult.error) {
+    console.error("incidents error:", incidentsResult.error);
+  }
 
   const totalChildren = totalChildrenResult.count ?? 0;
   const teachers = teachersResult.count ?? 0;
