@@ -41,7 +41,9 @@ export async function getParentChildren(parentId: string): Promise<Child[]> {
     return [];
   }
 
-  return data?.map(pc => pc.child).filter(Boolean) as Child[] || [];
+  // Flatten nested array and filter out null values
+  const children = data?.map(pc => pc.child).flat().filter(Boolean) || [];
+  return children as Child[];
 }
 
 /**

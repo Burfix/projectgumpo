@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { loginAction } from "./actions";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,26 +19,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-        return;
+      const result = await loginAction(email, password);
+      
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
       }
-
-      // If session exists, go to dashboard
-      if (data.session) {
-        router.push("/dashboard");
-        router.refresh();
-      } else {
-        setError("No session returned. Check Supabase auth settings.");
-      }
+      // If successful, loginAction will redirect
     } catch (err: any) {
       setError(err?.message ?? "Login failed");
-    } finally {
       setLoading(false);
     }
   }

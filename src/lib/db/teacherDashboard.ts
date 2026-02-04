@@ -37,7 +37,9 @@ export async function getTeacherClassrooms(teacherId: string): Promise<Classroom
     return [];
   }
 
-  return data?.map(tc => tc.classroom).filter(Boolean) as Classroom[] || [];
+  // Flatten nested array and filter out null values
+  const classrooms = data?.map(tc => tc.classroom).flat().filter(Boolean) || [];
+  return classrooms as Classroom[];
 }
 
 /**
