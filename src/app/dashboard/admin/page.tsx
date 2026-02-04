@@ -1,14 +1,39 @@
 import { protectRoute } from "@/lib/auth/middleware";
 import Link from "next/link";
+import { getPrincipalDashboardData } from "@/lib/db/principalDashboard";
+import StatCard from "./_components/StatCard";
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams?: { schoolId?: string };
+}) {
   let user;
   try {
-    user = await protectRoute(["ADMIN", "SUPER_ADMIN"]);
+    user = await protectRoute(["ADMIN", "SUPER_ADMIN", "PRINCIPAL"]);
   } catch (error) {
     console.error("Auth error:", error);
     throw error;
   }
+
+  const dashboardData = await getPrincipalDashboardData({
+    schoolIdParam: searchParams?.schoolId,
+  });
+
+  const { stats, classrooms, incidents } = dashboardData;
+  const parentEngagementValue =
+    stats.parentEngagementPercent === null ? "—" : `${stats.parentEngagementPercent}%`;
+  const attendanceValue =
+    stats.attendancePercent === null ? "—" : `${stats.attendancePercent}%`;
+  const attendanceClass =
+    stats.attendancePercent === null ? "text-gray-900" : "text-green-600";
+  const formatIncidentTime = (date: string) =>
+    new Date(date).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -26,26 +51,25 @@ export default async function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="text-gray-600 text-sm font-medium">Total Children</div>
-            <div className="text-3xl font-bold text-gray-900 mt-2">58</div>
-            <p className="text-xs text-gray-600 mt-2">Across all classes</p>
-          </div>
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="text-gray-600 text-sm font-medium">Teachers</div>
-            <div className="text-3xl font-bold text-gray-900 mt-2">6</div>
-            <p className="text-xs text-green-600 mt-2">All active</p>
-          </div>
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="text-gray-600 text-sm font-medium">Parent Engagement</div>
-            <div className="text-3xl font-bold text-gray-900 mt-2">94%</div>
-            <p className="text-xs text-gray-600 mt-2">App opens today</p>
-          </div>
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="text-gray-600 text-sm font-medium">Attendance</div>
-            <div className="text-3xl font-bold text-green-600 mt-2">96%</div>
-            <p className="text-xs text-gray-600 mt-2">Today</p>
-          </div>
+          <StatCard
+            label="Total Children"
+            value={stats.totalChildren}
+            subLabel="Across all classes"
+          />
+          <StatCard label="Teachers" value={stats.teachers} />
+          <StatCard
+            label="Parent Engagement"
+            value={parentEngagementValue}
+            subLabel={stats.parentEngagementPercent === null ? undefined : "App opens today"}
+            tooltip={stats.parentEngagementPercent === null ? stats.engagementNote : undefined}
+          />
+          <StatCard
+            label="Attendance"
+            value={attendanceValue}
+            valueClassName={attendanceClass}
+            subLabel={stats.attendancePercent === null ? undefined : "Today"}
+            tooltip={stats.attendancePercent === null ? stats.attendanceNote : undefined}
+          />
         </div>
 
         {/* Content Grid */}
@@ -57,27 +81,36 @@ export default async function AdminDashboard() {
                 <h2 className="text-lg font-semibold text-gray-900">Classrooms</h2>
               </div>
               <div className="divide-y divide-gray-200">
-                {[
-                  { name: "Sunflower Room", teacher: "Ms. Sarah", children: 18, status: "In Session" },
-                  { name: "Rainbow Room", teacher: "Ms. Emily", children: 20, status: "In Session" },
-                  { name: "Stars Room", teacher: "Mr. David", children: 20, status: "Nap Time" },
-                ].map((room, i) => (
-                  <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                    <div>
-                      <p className="font-medium text-gray-900">{room.name}</p>
-                      <p className="text-sm text-gray-600">{room.teacher} • {room.children} children</p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        room.status === "In Session"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-purple-100 text-purple-800"
-                      }`}
-                    >
-                      {room.status}
-                    </span>
-                  </div>
-                ))}
+                {classrooms.length === 0 ? (
+                  <div className="px-6 py-4 text-sm text-gray-500">No classrooms found.</div>
+                ) : (
+                  classrooms.map((room) => {
+                    const badgeClass =
+                      room.status.toLowerCase() === "active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-blue-100 text-blue-800";
+                    const teacherLabel =
+                      room.teacherNames.length > 0
+                        ? room.teacherNames.join(", ")
+                        : "Unassigned";
+                    return (
+                      <div
+                        key={room.id}
+                        className="px-6 py-4 flex items-center justify-between hover:bg-gray-50"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">{room.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {teacherLabel} • {room.childrenCount} children
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${badgeClass}`}>
+                          {room.status}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -134,27 +167,32 @@ export default async function AdminDashboard() {
             <h2 className="text-lg font-semibold text-gray-900">Incident Reports (This Week)</h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {[
-              { child: "Ben Smith", type: "Minor Bump", time: "Today 10:23 AM", status: "Reviewed" },
-              { child: "Clara Williams", type: "Behavioral", time: "Yesterday 2:45 PM", status: "Reviewed" },
-              { child: "Ava Johnson", type: "Scratch", time: "2 days ago", status: "Pending" },
-            ].map((incident, i) => (
-              <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                <div>
-                  <p className="font-medium text-gray-900">{incident.child}</p>
-                  <p className="text-sm text-gray-600">{incident.type} • {incident.time}</p>
-                </div>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    incident.status === "Reviewed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}
+            {incidents.length === 0 ? (
+              <div className="px-6 py-4 text-sm text-gray-500">No incidents reported this week.</div>
+            ) : (
+              incidents.map((incident) => (
+                <div
+                  key={incident.id}
+                  className="px-6 py-4 flex items-center justify-between hover:bg-gray-50"
                 >
-                  {incident.status}
-                </span>
-              </div>
-            ))}
+                  <div>
+                    <p className="font-medium text-gray-900">{incident.childName}</p>
+                    <p className="text-sm text-gray-600">
+                      {incident.title} • {formatIncidentTime(incident.createdAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      incident.status === "Reviewed"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {incident.status}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
