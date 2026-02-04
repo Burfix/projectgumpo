@@ -83,16 +83,35 @@ CREATE POLICY "Users can view teacher assignments in their school" ON public.tea
   );
 
 -- ====================
--- 3. UPDATE CHILDREN TABLE (add classroom_id if missing)
+-- 3. UPDATE CHILDREN TABLE (add missing columns)
 -- ====================
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' AND table_name = 'children' AND column_name = 'classroom_id'
-  ) THEN
-    ALTER TABLE public.children ADD COLUMN classroom_id BIGINT REFERENCES public.classrooms(id) ON DELETE SET NULL;
-    CREATE INDEX children_classroom_id_idx ON public.children(classroom_id);
+  -- Check if children table exists first
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'children') THEN
+    
+    -- Add school_id if missing
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'public' AND table_name = 'children' AND column_name = 'school_id'
+    ) THEN
+      ALTER TABLE public.children ADD COLUMN school_id BIGINT REFERENCES public.schools(id) ON DELETE CASCADE;
+      CREATE INDEX IF NOT EXISTS children_school_id_idx ON public.children(school_id);
+      RAISE NOTICE 'Added school_id column to children table';
+    END IF;
+    
+    -- Add classroom_id if missing
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'public' AND table_name = 'children' AND column_name = 'classroom_id'
+    ) THEN
+      ALTER TABLE public.children ADD COLUMN classroom_id BIGINT REFERENCES public.classrooms(id) ON DELETE SET NULL;
+      CREATE INDEX IF NOT EXISTS children_classroom_id_idx ON public.children(classroom_id);
+      RAISE NOTICE 'Added classroom_id column to children table';
+    END IF;
+    
+  ELSE
+    RAISE NOTICE 'children table does not exist yet, skipping column additions';
   END IF;
 END $$;
 
