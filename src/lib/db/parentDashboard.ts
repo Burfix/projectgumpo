@@ -10,7 +10,7 @@ import type {
 } from '@/types/database';
 
 /**
- * Get children linked to a parent
+ * Get children linked to a parent (no school_id required)
  */
 export async function getParentChildren(parentId: string): Promise<Child[]> {
   const supabase = await createClient();
