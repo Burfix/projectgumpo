@@ -87,7 +87,7 @@ CREATE POLICY "Users can view classrooms in their school" ON public.classrooms
 -- ====================
 CREATE TABLE IF NOT EXISTS public.teacher_classroom (
   id BIGSERIAL PRIMARY KEY,
-  teacher_id UUID NOT NULL -- References auth.users(id),
+  teacher_id UUID NOT NULL, -- References auth.users(id)
   classroom_id BIGINT NOT NULL REFERENCES public.classrooms(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
   assigned_at TIMESTAMPTZ DEFAULT now(),
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.attendance_logs (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL -- References auth.users(id),
+  teacher_id UUID NOT NULL, -- References auth.users(id)
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   status TEXT NOT NULL CHECK (status IN ('PRESENT', 'ABSENT', 'LATE', 'SICK', 'EXCUSED')),
   notes TEXT,
@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS public.meal_logs (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL -- References auth.users(id),
+  teacher_id UUID NOT NULL, -- References auth.users(id)
   meal_type TEXT NOT NULL CHECK (meal_type IN ('BREAKFAST', 'LUNCH', 'SNACK', 'DINNER')),
   description TEXT, -- e.g., "Ate all vegetables, refused fruit"
   date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -229,7 +229,7 @@ CREATE TABLE IF NOT EXISTS public.nap_logs (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL -- References auth.users(id),
+  teacher_id UUID NOT NULL, -- References auth.users(id)
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ,
   duration_minutes INTEGER, -- Calculated when end_time is set
@@ -268,7 +268,7 @@ CREATE TABLE IF NOT EXISTS public.incident_reports (
   id BIGSERIAL PRIMARY KEY,
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL -- References auth.users(id),
+  teacher_id UUID NOT NULL, -- References auth.users(id)
   title TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('INJURY', 'BEHAVIORAL', 'HEALTH', 'OTHER')),
   description TEXT NOT NULL,
@@ -312,7 +312,7 @@ CREATE TABLE IF NOT EXISTS public.daily_activities (
   id BIGSERIAL PRIMARY KEY,
   classroom_id BIGINT NOT NULL REFERENCES public.classrooms(id) ON DELETE CASCADE,
   school_id BIGINT NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  teacher_id UUID NOT NULL -- References auth.users(id),
+  teacher_id UUID NOT NULL, -- References auth.users(id)
   activity_name TEXT NOT NULL, -- e.g., "Morning Circle", "Art Time"
   description TEXT, -- e.g., "Painted with watercolors, created butterfly art"
   activity_time TIME NOT NULL,
@@ -349,7 +349,7 @@ CREATE POLICY "Teachers can create activities" ON public.daily_activities
 -- ====================
 CREATE TABLE IF NOT EXISTS public.parent_child (
   id BIGSERIAL PRIMARY KEY,
-  parent_id UUID NOT NULL -- References auth.users(id),
+  parent_id UUID NOT NULL, -- References auth.users(id)
   child_id BIGINT NOT NULL REFERENCES public.children(id) ON DELETE CASCADE,
   relationship TEXT DEFAULT 'Parent', -- Parent, Guardian, Emergency Contact
   is_primary BOOLEAN DEFAULT true,
