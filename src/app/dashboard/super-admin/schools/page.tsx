@@ -395,7 +395,7 @@ export default function SchoolsManagement() {
                   >
                     <option value="">Select Type</option>
                     <option value="Preschool">Preschool</option>
-                    <option value="Crèche">Crèche</option>
+                    <option value="Creche">Crèche</option>
                     <option value="Primary">Primary</option>
                     <option value="Other">Other</option>
                   </select>
