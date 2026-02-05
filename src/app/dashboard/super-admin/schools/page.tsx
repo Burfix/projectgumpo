@@ -393,10 +393,11 @@ export default function SchoolsManagement() {
                     className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     required
                   >
+                    <option value="">Select Type</option>
+                    <option value="Preschool">Preschool</option>
                     <option value="Crèche">Crèche</option>
                     <option value="Primary">Primary</option>
-                    <option value="High School">High School</option>
-                    <option value="Combined">Combined</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div>
