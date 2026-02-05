@@ -2,6 +2,7 @@ import { protectRoute } from "@/lib/auth/middleware";
 import Link from "next/link";
 import { getPrincipalDashboardData } from "@/lib/db/principalDashboard";
 import StatCard from "./_components/StatCard";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function AdminDashboard({
   searchParams,
@@ -36,13 +37,16 @@ export default async function AdminDashboard({
     });
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation Header */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Principal Dashboard</h1>
-          <div className="text-sm text-gray-600">
-            Welcome, <span className="font-semibold">{user.email}</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Principal Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Welcome, <span className="font-semibold">{user.email}</span>
+            </div>
           </div>
         </div>
       </nav>

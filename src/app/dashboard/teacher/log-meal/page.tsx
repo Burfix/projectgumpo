@@ -127,7 +127,6 @@ export default function LogMeal() {
           </p>
           <p className="text-xs text-stone-400 mt-1">{loggedCount} of {children.length} logged</p>
         </div>
-        </div>
 
         {/* Meal Type Selector */}
         <div className="bg-white rounded-lg p-4 mb-6 border border-stone-200">

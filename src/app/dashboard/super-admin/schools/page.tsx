@@ -24,7 +24,8 @@ export default function SchoolsManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    location: "",
+    city: "",
+    type: "",
     subscription_tier: "Starter" as const,
     account_status: "Trial" as const,
   });
@@ -73,33 +74,59 @@ export default function SchoolsManagement() {
     setError("");
     setIsSubmitting(true);
 
+    console.log("🔵 [FRONTEND] Starting school creation...");
+    console.log("🔵 [FRONTEND] Form data:", formData);
+
     try {
+      console.log("🔵 [FRONTEND] Sending POST request to /api/schools...");
+      
+      // Only send the fields that the API expects
+      const requestBody = {
+        name: formData.name,
+        city: formData.city,
+        type: formData.type,
+      };
+      console.log("🔵 [FRONTEND] Request body:", requestBody);
+      
       const response = await fetch("/api/schools", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody),
       });
+      
+      console.log("🔵 [FRONTEND] Response status:", response.status);
+      console.log("🔵 [FRONTEND] Response ok:", response.ok);
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Failed to create school");
+        console.error("🔴 [FRONTEND] Error response data:", data);
+        console.error("🔴 [FRONTEND] Full error details:", JSON.stringify(data, null, 2));
+        throw new Error(data.error || data.message || "Failed to create school");
       }
+
+      const successData = await response.json();
+      console.log("✅ [FRONTEND] School created successfully:", successData);
 
       // Reload schools list
       await loadSchools();
       setShowAddModal(false);
       setFormData({
         name: "",
-        location: "",
+        city: "",
+        type: "",
         subscription_tier: "Starter",
         account_status: "Trial",
       });
     } catch (err: any) {
+      console.error("🔴 [FRONTEND] Caught error:", err);
+      console.error("🔴 [FRONTEND] Error message:", err.message);
+      console.error("🔴 [FRONTEND] Error stack:", err.stack);
       setError(err.message || "Failed to create school");
       console.error("Error creating school:", err);
     } finally {
+      console.log("🔵 [FRONTEND] Finished submission, isSubmitting = false");
       setIsSubmitting(false);
     }
   };
@@ -341,17 +368,36 @@ export default function SchoolsManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">
-                    Location
+                    City *
                   </label>
                   <input
                     type="text"
-                    value={formData.location}
+                    required
+                    value={formData.city}
                     onChange={(e) =>
-                      setFormData({ ...formData, location: e.target.value })
+                      setFormData({ ...formData, city: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     placeholder="e.g., Cape Town"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    School Type *
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) =>
+                      setFormData({ ...formData, type: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="Crèche">Crèche</option>
+                    <option value="Primary">Primary</option>
+                    <option value="High School">High School</option>
+                    <option value="Combined">Combined</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">

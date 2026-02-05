@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import FileUpload from "@/components/ui/FileUpload";
+import { notifyParentOfIncident } from "@/lib/notifications";
 
 interface Child {
   id: number;
@@ -22,6 +24,8 @@ export default function ReportIncident() {
   const [actionTaken, setActionTaken] = useState("");
   const [severity, setSeverity] = useState<"minor" | "moderate" | "serious">("minor");
   const [notifyParent, setNotifyParent] = useState(true);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     loadChildren();
@@ -59,6 +63,32 @@ export default function ReportIncident() {
     "Other",
   ];
 
+  async function handlePhotoUpload(file: File) {
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'incidents');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setPhotoUrl(data.url);
+    } catch (err) {
+      setError('Failed to upload photo');
+      console.error(err);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -78,11 +108,28 @@ export default function ReportIncident() {
         action_taken: actionTaken,
         severity,
         notify_parent: notifyParent,
+        photo_url: photoUrl,
         date: new Date().toISOString()
       };
 
-      // TODO: API call
+      // TODO: API call to save incident
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Send notification to parent if requested
+      if (notifyParent) {
+        const child = children.find(c => c.id === parseInt(selectedChild));
+        if (child) {
+          // TODO: Get parent user ID from child record
+          const parentUserId = 'parent-user-id'; // This should come from the database
+          await notifyParentOfIncident(
+            parentUserId,
+            `${child.first_name} ${child.last_name}`,
+            incidentType,
+            severity,
+            description
+          );
+        }
+      }
       
       setSuccess(true);
       // Reset form
@@ -92,6 +139,7 @@ export default function ReportIncident() {
       setActionTaken("");
       setSeverity("minor");
       setNotifyParent(true);
+      setPhotoUrl(null);
       
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -256,6 +304,24 @@ export default function ReportIncident() {
             />
           </div>
 
+          {/* Photo Upload */}
+          <div className="bg-white rounded-lg border border-stone-200 p-6">
+            <label className="block text-sm font-semibold text-stone-900 mb-3">
+              Attach Photo (Optional)
+            </label>
+            <FileUpload
+              onFileSelect={handlePhotoUpload}
+              disabled={uploadingPhoto}
+              accept="image/*"
+            />
+            {uploadingPhoto && (
+              <p className="text-sm text-stone-500 mt-2">Uploading photo...</p>
+            )}
+            {photoUrl && (
+              <p className="text-sm text-green-600 mt-2">✓ Photo uploaded successfully</p>
+            )}
+          </div>
+
           {/* Notify Parent */}
           <div className="bg-white rounded-lg border border-stone-200 p-6">
             <label className="flex items-center gap-3 cursor-pointer">
@@ -291,4 +357,3 @@ export default function ReportIncident() {
     </main>
   );
 }
-              </button>

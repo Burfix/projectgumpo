@@ -1,0 +1,52 @@
+<svg width="384" height="384" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#10b981" rx="80"/>
+  
+  <!-- Goose Body -->
+  <ellipse cx="256" cy="300" rx="120" ry="140" fill="white" opacity="0.95"/>
+  
+  <!-- Goose Neck -->
+  <path d="M 256 180 Q 240 140, 260 100" 
+        stroke="white" 
+        stroke-width="12" 
+        fill="none" 
+        stroke-linecap="round" 
+        opacity="0.95"/>
+  
+  <!-- Goose Head -->
+  <circle cx="265" cy="95" r="35" fill="white" opacity="0.95"/>
+  
+  <!-- Beak -->
+  <path d="M 295 95 L 320 90 L 295 100 Z" fill="#f59e0b" opacity="0.9"/>
+  
+  <!-- Eye -->
+  <circle cx="275" cy="88" r="6" fill="#1f2937"/>
+  
+  <!-- Wing accent -->
+  <path d="M 200 280 Q 160 260, 180 240" 
+        stroke="white" 
+        stroke-width="6" 
+        fill="none" 
+        stroke-linecap="round" 
+        opacity="0.7"/>
+  
+  <!-- Project Name (for larger sizes) -->
+  
+  <text x="256" y="470" 
+        font-family="Arial, sans-serif" 
+        font-size="30" 
+        font-weight="bold"
+        fill="white" 
+        text-anchor="middle">
+    PROJECT GOOSE
+  </text>
+  
+  <!-- Subtle gradient overlay -->
+  <defs>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#shine)" rx="80"/>
+</svg>
