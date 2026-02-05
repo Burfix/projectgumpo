@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getTeachers } from "@/lib/db/secondaryPrincipalDashboard";
 
+// Revalidate cache every 5 minutes
+export const revalidate = 300;
+
 export async function GET() {
   try {
     const teachers = await getTeachers();

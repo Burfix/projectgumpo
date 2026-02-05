@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+// Revalidate cache every 60 seconds
+export const revalidate = 60;
+
 interface SystemHealth {
   uptime_percentage: number;
   active_users_today: number;

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// Revalidate cache every 30 seconds
+export const revalidate = 30;
+
 export async function GET() {
   try {
     const supabase = await createAdminClient();
