@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const insertPayload = {
       name: name.trim(),
       city: city.trim(),
-      type: type.trim(),
+      school_type: type.trim(),
     };
     console.log("🟢 [API] Insert payload:", insertPayload);
 
