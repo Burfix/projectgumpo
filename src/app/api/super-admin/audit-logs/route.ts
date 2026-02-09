@@ -1,35 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { protectRoute } from '@/lib/auth/middleware';
+import { getAuditLogs } from "@/lib/db/superAdminDashboard";
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify SUPER_ADMIN role
-    await protectRoute(['SUPER_ADMIN']);
+    const { searchParams } = new URL(request.url);
+    const schoolId = searchParams.get("school_id");
+    const userId = searchParams.get("user_id");
+    const action = searchParams.get("action");
+    const limit = searchParams.get("limit");
 
-    const supabase = await createClient();
-    const limit = request.nextUrl.searchParams.get('limit') || '5';
+    const logs = await getAuditLogs({
+      school_id: schoolId || undefined,
+      user_id: userId || undefined,
+      action: action || undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
 
-    // Fetch recent audit logs
-    const { data, error } = await supabase
-      .from('super_admin_audit')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(parseInt(limit));
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(data || []);
-  } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    return NextResponse.json(logs);
+  } catch (error: any) {
+    console.error("Get audit logs error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch audit logs' },
-      { status: 500 }
+      { error: error.message || "Failed to fetch audit logs" },
+      { status: error.message === "Not authenticated" ? 401 : 500 }
     );
   }
 }

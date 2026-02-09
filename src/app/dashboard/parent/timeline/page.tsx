@@ -1,195 +1,280 @@
-import { protectRoute } from "@/lib/auth/middleware";
-import Link from "next/link";
+"use client";
 
-export default async function ParentTimeline() {
-  let user;
-  try {
-    user = await protectRoute(["PARENT", "TEACHER", "ADMIN", "SUPER_ADMIN"]);
-  } catch (error) {
-    console.error("Auth error:", error);
-    throw error;
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+type Child = {
+  id: number;
+  first_name: string;
+  last_name: string;
+};
+
+type TimelineEvent = {
+  type: 'check_in' | 'check_out' | 'meal' | 'nap_start' | 'nap_end' | 'incident';
+  time: string;
+  data: Record<string, unknown>;
+};
+
+export default function ParentTimeline() {
+  const searchParams = useSearchParams();
+  const childId = searchParams.get('childId');
+  
+  const [loading, setLoading] = useState(true);
+  const [child, setChild] = useState<Child | null>(null);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    if (childId) {
+      fetchTimeline();
+    }
+  }, [childId, selectedDate]);
+
+  async function fetchTimeline() {
+    try {
+      const response = await fetch(`/api/parent/timeline?childId=${childId}&date=${selectedDate}`);
+      if (!response.ok) throw new Error("Failed to fetch timeline");
+      
+      const data = await response.json();
+      setChild(data.child);
+      setTimeline(data.timeline || []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching timeline:", error);
+      setLoading(false);
+    }
   }
 
+  function changeDate(days: number) {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + days);
+    setSelectedDate(newDate.toISOString().split('T')[0]);
+    setLoading(true);
+  }
+
+  if (loading && !child) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </main>
+    );
+  }
+
+  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+  const isFuture = new Date(selectedDate) > new Date();
+
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
       {/* Navigation Header */}
-      <nav className="bg-white border-b border-stone-200 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-3">
+      <nav className="bg-white/80 backdrop-blur-lg border-b border-stone-200 sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-4">
           <Link 
             href="/dashboard/parent"
-            className="inline-flex items-center text-sm text-stone-600 hover:text-stone-900"
+            className="inline-flex items-center text-sm font-medium text-stone-600 hover:text-emerald-600"
           >
             <span className="mr-2">←</span>
-            <span>Today</span>
+            <span>Back to Dashboard</span>
           </Link>
         </div>
       </nav>
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Date Indicator */}
+        {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-stone-900">Today</h1>
-          <p className="text-sm text-stone-500 mt-1">Saturday, 1 February 2026</p>
+          <h1 className="text-3xl font-bold text-stone-900 mb-2">
+            {child?.first_name}&apos;s Timeline
+          </h1>
+          <p className="text-stone-600">Complete daily activity log</p>
+        </div>
+
+        {/* Date Selector */}
+        <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => changeDate(-1)}
+              className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
+            >
+              <span className="text-xl">←</span>
+            </button>
+            
+            <div className="text-center">
+              <p className="text-xl font-bold text-stone-900">
+                {isToday ? 'Today' : new Date(selectedDate).toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+              <p className="text-sm text-stone-500">
+                {new Date(selectedDate).toLocaleDateString('en-US', { 
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
+            
+            <button
+              onClick={() => changeDate(1)}
+              disabled={isFuture}
+              className={`p-2 rounded-lg transition-colors ${
+                isFuture ? 'text-stone-300 cursor-not-allowed' : 'hover:bg-stone-100'
+              }`}
+            >
+              <span className="text-xl">→</span>
+            </button>
+          </div>
+          
+          {!isToday && (
+            <button
+              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+              className="w-full mt-3 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            >
+              Jump to Today
+            </button>
+          )}
         </div>
 
         {/* Timeline */}
-        <div className="space-y-3">
-          {[
-            {
-              time: "7:45 AM",
-              title: "Arrived at school",
-              description: "Dropped off by parent",
-              icon: "arrival",
-              iconBg: "bg-emerald-50",
-              iconColor: "text-emerald-600"
-            },
-            {
-              time: "8:00 AM",
-              title: "Breakfast",
-              description: "Porridge with honey and sliced banana. Ate well.",
-              icon: "meal",
-              iconBg: "bg-amber-50",
-              iconColor: "text-amber-600"
-            },
-            {
-              time: "9:30 AM",
-              title: "Creative time",
-              description: "Painted a rainbow during art activity",
-              icon: "activity",
-              iconBg: "bg-purple-50",
-              iconColor: "text-purple-600",
-              hasPhoto: true
-            },
-            {
-              time: "10:30 AM",
-              title: "Outside play",
-              description: "Explored the garden and played with friends",
-              icon: "play",
-              iconBg: "bg-blue-50",
-              iconColor: "text-blue-600"
-            },
-            {
-              time: "11:00 AM",
-              title: "Morning snack",
-              description: "Crackers with cheese. Drank water.",
-              icon: "snack",
-              iconBg: "bg-orange-50",
-              iconColor: "text-orange-600"
-            },
-            {
-              time: "12:00 PM",
-              title: "Lunch",
-              description: "Pasta with vegetables and a small fruit cup. Good appetite.",
-              icon: "meal",
-              iconBg: "bg-amber-50",
-              iconColor: "text-amber-600"
-            },
-            {
-              time: "12:30 PM",
-              title: "Nap started",
-              description: "Settled down quickly",
-              icon: "nap",
-              iconBg: "bg-indigo-50",
-              iconColor: "text-indigo-600"
-            },
-            {
-              time: "2:15 PM",
-              title: "Woke up",
-              description: "Slept for 1 hour 45 minutes. Well-rested.",
-              icon: "nap",
-              iconBg: "bg-indigo-50",
-              iconColor: "text-indigo-600"
-            },
-            {
-              time: "3:00 PM",
-              title: "Mood update",
-              description: "Content and playful. Engaged well with peers.",
-              icon: "mood",
-              iconBg: "bg-rose-50",
-              iconColor: "text-rose-600"
-            },
-            {
-              time: "3:30 PM",
-              title: "Afternoon snack",
-              description: "Apple slices and a small cookie",
-              icon: "snack",
-              iconBg: "bg-orange-50",
-              iconColor: "text-orange-600"
-            },
-          ].map((event, i) => (
-            <div key={i} className="flex gap-4">
-              {/* Time */}
-              <div className="flex-shrink-0 w-16 text-right pt-1">
-                <p className="text-xs font-medium text-stone-500">{event.time}</p>
-              </div>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : timeline.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-12 text-center">
+            <span className="text-6xl block mb-4">📅</span>
+            <h3 className="text-xl font-semibold text-stone-900 mb-2">No Activity Yet</h3>
+            <p className="text-stone-600">
+              {isToday ? "Check back later for today's updates!" : "No activity was logged on this day."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {timeline.map((event, i) => {
+              const time = new Date(event.time).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit' 
+              });
+              
+              let icon = '📍';
+              let title = '';
+              let description = '';
+              let colorClasses = 'bg-stone-50 border-stone-200';
+              let iconBg = 'bg-stone-100';
+              let iconColor = 'text-stone-600';
 
-              {/* Event Card */}
-              <div className="flex-grow bg-white rounded-xl border border-stone-200 p-4">
-                <div className="flex items-start gap-3">
-                  {/* Icon */}
-                  <div className={`flex-shrink-0 w-10 h-10 ${event.iconBg} rounded-lg flex items-center justify-center`}>
-                    <div className={`w-5 h-5 ${event.iconColor}`}>
-                      {event.icon === 'arrival' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                        </svg>
-                      )}
-                      {event.icon === 'meal' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      )}
-                      {event.icon === 'snack' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      )}
-                      {event.icon === 'activity' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                        </svg>
-                      )}
-                      {event.icon === 'play' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                      {event.icon === 'nap' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                      )}
-                      {event.icon === 'mood' && (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
+              switch (event.type) {
+                case 'check_in':
+                  icon = '🚪';
+                  title = 'Arrived at School';
+                  description = 'Checked in safely';
+                  colorClasses = 'bg-emerald-50 border-emerald-200';
+                  iconBg = 'bg-emerald-100';
+                  iconColor = 'text-emerald-600';
+                  break;
+                  
+                case 'check_out':
+                  icon = '👋';
+                  title = 'Picked Up';
+                  description = 'Checked out from school';
+                  colorClasses = 'bg-blue-50 border-blue-200';
+                  iconBg = 'bg-blue-100';
+                  iconColor = 'text-blue-600';
+                  break;
+                  
+                case 'meal':
+                  icon = '🍽️';
+                  const meal = event.data as { meal_type?: string; food_items?: string; amount_eaten?: string; notes?: string };
+                  title = meal.meal_type ? meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1) : 'Meal';
+                  description = meal.food_items || '';
+                  if (meal.amount_eaten) {
+                    description += (description ? ' • ' : '') + `Ate ${meal.amount_eaten}`;
+                  }
+                  if (meal.notes) {
+                    description += (description ? ' • ' : '') + meal.notes;
+                  }
+                  colorClasses = 'bg-amber-50 border-amber-200';
+                  iconBg = 'bg-amber-100';
+                  iconColor = 'text-amber-600';
+                  break;
+                  
+                case 'nap_start':
+                  icon = '😴';
+                  title = 'Nap Time Started';
+                  description = 'Settled down for nap';
+                  colorClasses = 'bg-indigo-50 border-indigo-200';
+                  iconBg = 'bg-indigo-100';
+                  iconColor = 'text-indigo-600';
+                  break;
+                  
+                case 'nap_end':
+                  icon = '🌟';
+                  const nap = event.data as { start_time?: string; quality?: string; notes?: string };
+                  title = 'Woke Up from Nap';
+                  if (nap.start_time) {
+                    const napDuration = Math.round(
+                      (new Date(event.time).getTime() - new Date(nap.start_time).getTime()) / 60000
+                    );
+                    const hours = Math.floor(napDuration / 60);
+                    const mins = napDuration % 60;
+                    description = `Slept for ${hours}h ${mins}m`;
+                  }
+                  if (nap.quality) {
+                    description += (description ? ' • ' : '') + `${nap.quality} rest`;
+                  }
+                  if (nap.notes) {
+                    description += (description ? ' • ' : '') + nap.notes;
+                  }
+                  colorClasses = 'bg-purple-50 border-purple-200';
+                  iconBg = 'bg-purple-100';
+                  iconColor = 'text-purple-600';
+                  break;
+                  
+                case 'incident':
+                  icon = '⚠️';
+                  const incident = event.data as { incident_type?: string; severity?: string; description?: string };
+                  title = incident.incident_type ? 
+                    incident.incident_type.charAt(0).toUpperCase() + incident.incident_type.slice(1) : 
+                    'Incident';
+                  description = incident.description || '';
+                  if (incident.severity) {
+                    description += (description ? ' • ' : '') + `Severity: ${incident.severity}`;
+                  }
+                  colorClasses = 'bg-orange-50 border-orange-200';
+                  iconBg = 'bg-orange-100';
+                  iconColor = 'text-orange-600';
+                  break;
+              }
+
+              return (
+                <div key={i} className={`relative ${colorClasses} border-2 rounded-2xl p-5 transition-all hover:shadow-md`}>
+                  {/* Connector Line (not for last item) */}
+                  {i < timeline.length - 1 && (
+                    <div className="absolute left-9 top-16 w-0.5 h-8 bg-stone-200"></div>
+                  )}
+                  
+                  <div className="flex gap-4">
+                    {/* Icon */}
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-2xl`}>
+                      {icon}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-grow">
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className={`text-lg font-bold ${iconColor}`}>{title}</h3>
+                        <span className="text-sm font-semibold text-stone-500">{time}</span>
+                      </div>
+                      {description && (
+                        <p className="text-sm text-stone-700 leading-relaxed">{description}</p>
                       )}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-grow min-w-0">
-                    <h3 className="text-sm font-semibold text-stone-900 mb-1">{event.title}</h3>
-                    <p className="text-sm text-stone-600 leading-relaxed">{event.description}</p>
-                    
-                    {/* Photo Thumbnail */}
-                    {event.hasPhoto && (
-                      <div className="mt-3 w-24 h-24 bg-stone-100 rounded-lg overflow-hidden">
-                        <div className="w-full h-full bg-gradient-to-br from-stone-200 to-stone-300 flex items-center justify-center">
-                          <span className="text-xs text-stone-400">Photo</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom Spacing */}
-        <div className="h-12"></div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </main>
   );

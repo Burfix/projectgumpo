@@ -1,303 +1,533 @@
 import { createClient } from "@/lib/supabase/server";
-import { UserRole } from "@/lib/auth/rbac";
 
-export interface PrincipalDashboardStats {
-  totalChildren: number;
-  teachers: number;
-  parentEngagementPercent: number | null;
-  attendancePercent: number | null;
-  engagementNote?: string;
-  attendanceNote?: string;
-}
+/**
+ * Database helpers for the Principal (Admin) Dashboard
+ */
 
-export interface ClassroomSummary {
-  id: number;
-  name: string;
-  status: string;
-  teacherNames: string[];
-  childrenCount: number;
-}
-
-export interface IncidentSummary {
-  id: number;
-  childName: string;
-  title: string;
-  status: "Reviewed" | "Pending";
-  createdAt: string;
-}
-
-export interface PrincipalDashboardData {
-  schoolId: string;
-  stats: PrincipalDashboardStats;
-  classrooms: ClassroomSummary[];
-  incidents: IncidentSummary[];
-}
-
-const MISSING_TABLE_CODES = new Set(["42P01", "42703"]);
-
-function isMissingTableError(error?: { code?: string; message?: string }) {
-  if (!error) return false;
-  if (error.code && MISSING_TABLE_CODES.has(error.code)) return true;
-  return Boolean(error.message && error.message.toLowerCase().includes("does not exist"));
-}
-
-export async function getPrincipalDashboardData(options?: {
-  schoolIdParam?: string | string[];
-}): Promise<PrincipalDashboardData> {
+// ============================================================
+// HELPER: Get authenticated user and verify school access
+// ============================================================
+async function getAuthenticatedPrincipal() {
   const supabase = await createClient();
-
-  const {
-    data: { user: authUser },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !authUser) {
-    throw new Error("Unauthorized: " + (authError?.message || "No auth user"));
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    throw new Error("Not authenticated. Please log in.");
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: userData, error: userError } = await supabase
     .from("users")
-    .select("id, role, school_id")
-    .eq("id", authUser.id)
+    .select("*")
+    .eq("id", user.id)
     .single();
 
-  if (profileError) {
-    console.error("Profile query error:", profileError);
-    if (profileError.code === '42P01' || profileError.message?.includes('does not exist')) {
-      throw new Error("Database tables not found. Please run the COMPLETE_RESET.sql migration first.");
-    }
-    throw new Error("User profile not found: " + profileError.message);
+  if (userError || !userData) {
+    console.error("User lookup error:", userError);
+    throw new Error("User not found in database");
   }
 
-  if (!profile) {
-    throw new Error("User profile not found. Please ensure your account is properly set up in the users table.");
+  if (!userData.school_id) {
+    throw new Error("User not associated with a school");
   }
 
-  const role = profile.role as UserRole;
-  
-  // For now, use a default school if none assigned
-  const resolvedSchoolId = profile.school_id || 'a0000000-0000-0000-0000-000000000001';
+  // Allow ADMIN, PRINCIPAL, and SUPER_ADMIN (for testing)
+  const allowedRoles = ['ADMIN', 'PRINCIPAL', 'SUPER_ADMIN'];
+  if (!allowedRoles.includes(userData.role)) {
+    throw new Error(`Access denied. Your role is '${userData.role}'. Admin dashboard requires ADMIN or PRINCIPAL role.`);
+  }
 
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  return { user: userData, supabase };
+}
 
-  const totalChildrenQuery = supabase
-    .from("children")
-    .select("id", { count: "exact", head: true })
-    .eq("school_id", resolvedSchoolId);
+// ============================================================
+// DASHBOARD OVERVIEW
+// ============================================================
+export async function getDashboardStats() {
+  const { user, supabase } = await getAuthenticatedPrincipal();
 
-  const teachersQuery = supabase
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .eq("school_id", resolvedSchoolId)
-    .eq("role", "TEACHER");
+  // Get school info
+  const { data: school } = await supabase
+    .from("schools")
+    .select("*")
+    .eq("id", user.school_id)
+    .single();
 
-  const totalParentsQuery = supabase
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .eq("school_id", resolvedSchoolId)
-    .eq("role", "PARENT");
-
-  const classroomsQuery = supabase
-    .from("classrooms")
-    .select("id, name, status")
-    .eq("school_id", resolvedSchoolId)
-    .order("name");
-
-  const childrenByClassroomQuery = supabase
-    .from("children")
-    .select("id, classroom_id")
-    .eq("school_id", resolvedSchoolId);
-
-  const teacherAssignmentsQuery = supabase
-    .from("teacher_classroom")
-    .select("classroom_id, teacher:teacher_id (name, email)")
-    .eq("school_id", resolvedSchoolId);
-
-  const incidentsQuery = supabase
-    .from("incident_reports")
-    .select("id, incident_type, description, severity, created_at, child:child_id (first_name, last_name)")
-    .eq("school_id", resolvedSchoolId)
-    .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    .order("created_at", { ascending: false })
-    .limit(5);
-
-  const attendanceQuery = supabase
-    .from("attendance_logs")
-    .select("id, status", { count: "exact" })
-    .eq("school_id", resolvedSchoolId)
-    .eq("date", today)
-    .eq("status", "PRESENT");
-
+  // Get counts
   const [
-    totalChildrenResult,
-    teachersResult,
-    totalParentsResult,
-    classroomsResult,
-    childrenByClassroomResult,
-    teacherAssignmentsResult,
-    incidentsResult,
-    attendanceResult,
+    { count: childrenCount },
+    { count: teachersCount },
+    { count: parentsCount },
+    { count: classroomsCount },
   ] = await Promise.all([
-    totalChildrenQuery,
-    teachersQuery,
-    totalParentsQuery,
-    classroomsQuery,
-    childrenByClassroomQuery,
-    teacherAssignmentsQuery,
-    incidentsQuery,
-    attendanceQuery,
+    supabase.from("children").select("*", { count: "exact", head: true }).eq("school_id", user.school_id).eq("status", "active"),
+    supabase.from("users").select("*", { count: "exact", head: true }).eq("school_id", user.school_id).eq("role", "TEACHER"),
+    supabase.from("users").select("*", { count: "exact", head: true }).eq("school_id", user.school_id).eq("role", "PARENT"),
+    supabase.from("classrooms").select("*", { count: "exact", head: true }).eq("school_id", user.school_id).eq("status", "active"),
   ]);
 
-  // Log errors for debugging
-  if (totalChildrenResult.error) {
-    console.error("totalChildren error:", totalChildrenResult.error);
-  }
-  if (classroomsResult.error) {
-    console.error("classrooms error:", classroomsResult.error);
-  }
-  if (childrenByClassroomResult.error) {
-    console.error("childrenByClassroom error:", childrenByClassroomResult.error);
-  }
-  if (teacherAssignmentsResult.error) {
-    console.error("teacherAssignments error:", teacherAssignmentsResult.error);
-  }
-  if (incidentsResult.error) {
-    console.error("incidents error:", incidentsResult.error);
-  }
-
-  const totalChildren = totalChildrenResult.count ?? 0;
-  const teachers = teachersResult.count ?? 0;
-  const totalParents = totalParentsResult.count ?? 0;
-
-  let attendancePercent: number | null = null;
-  let attendanceNote: string | undefined;
-  if (attendanceResult.error && isMissingTableError(attendanceResult.error)) {
-    attendanceNote = "Enable attendance tracking to see this";
-  } else if (attendanceResult.error) {
-    throw new Error(attendanceResult.error.message);
-  } else if (totalChildren > 0) {
-    const presentToday = attendanceResult.count ?? 0;
-    attendancePercent = Math.round((presentToday / totalChildren) * 100);
-  } else {
-    attendancePercent = 0;
-  }
-
-  let parentEngagementPercent: number | null = null;
-  let engagementNote: string | undefined;
-  // Parent engagement tracking not yet implemented
-  engagementNote = "Enable analytics to track";
-
-  const classroomsData = classroomsResult.error
-    ? isMissingTableError(classroomsResult.error)
-      ? []
-      : (() => {
-          throw new Error(classroomsResult.error.message);
-        })()
-    : classroomsResult.data ?? [];
-
-  const childrenByClassroomData = childrenByClassroomResult.error
-    ? isMissingTableError(childrenByClassroomResult.error)
-      ? []
-      : (() => {
-          throw new Error(childrenByClassroomResult.error.message);
-        })()
-    : childrenByClassroomResult.data ?? [];
-
-  const teacherAssignmentsData = teacherAssignmentsResult.error
-    ? isMissingTableError(teacherAssignmentsResult.error)
-      ? []
-      : (() => {
-          throw new Error(teacherAssignmentsResult.error.message);
-        })()
-    : teacherAssignmentsResult.data ?? [];
-
-  const classroomChildrenMap = new Map<number, number>();
-  childrenByClassroomData.forEach((child: { classroom_id?: number | null }) => {
-    if (!child.classroom_id) return;
-    classroomChildrenMap.set(
-      child.classroom_id,
-      (classroomChildrenMap.get(child.classroom_id) ?? 0) + 1
-    );
-  });
-
-  const classroomTeachersMap = new Map<number, string[]>();
-  teacherAssignmentsData.forEach(
-    (assignment: {
-      classroom_id?: number | null;
-      teacher?: { name?: string | null; email?: string | null } | { name?: string | null; email?: string | null }[] | null;
-    }) => {
-      if (!assignment.classroom_id) return;
-      const teachers = Array.isArray(assignment.teacher)
-        ? assignment.teacher
-        : assignment.teacher
-          ? [assignment.teacher]
-          : [];
-      const list = classroomTeachersMap.get(assignment.classroom_id) ?? [];
-      teachers.forEach((teacher) => {
-        const teacherName = teacher?.name || teacher?.email || "Teacher";
-        list.push(teacherName);
-      });
-      classroomTeachersMap.set(assignment.classroom_id, list);
-    }
-  );
-
-  const classrooms: ClassroomSummary[] = classroomsData.map(
-    (room: { id: number; name: string; status?: string | null }) => ({
-      id: room.id,
-      name: room.name,
-      status: room.status || "Active",
-      teacherNames: classroomTeachersMap.get(room.id) ?? [],
-      childrenCount: classroomChildrenMap.get(room.id) ?? 0,
-    })
-  );
-
-  const incidentsData = incidentsResult.error
-    ? isMissingTableError(incidentsResult.error)
-      ? []
-      : (() => {
-          throw new Error(incidentsResult.error.message);
-        })()
-    : incidentsResult.data ?? [];
-
-  const incidents: IncidentSummary[] = incidentsData.map(
-    (incident: {
-      id: number;
-      incident_type?: string | null;
-      description?: string | null;
-      severity?: string | null;
-      created_at: string;
-      child?:
-        | { first_name?: string | null; last_name?: string | null }
-        | { first_name?: string | null; last_name?: string | null }[]
-        | null;
-    }) => {
-      const childRecord = Array.isArray(incident.child) ? incident.child[0] : incident.child;
-      const childName =
-        [childRecord?.first_name, childRecord?.last_name].filter(Boolean).join(" ") ||
-        "Unknown Child";
-      // All incidents are pending by default since we don't have reviewed_at field yet
-      const status = "Pending";
-      return {
-        id: incident.id,
-        childName,
-        title: incident.incident_type || "Incident",
-        status,
-        createdAt: incident.created_at,
-      };
-    }
-  );
+  // Get recent activities (last 10)
+  const { data: recentActivities } = await supabase
+    .from("audit_logs")
+    .select("*")
+    .eq("school_id", user.school_id)
+    .order("created_at", { ascending: false })
+    .limit(10);
 
   return {
-    schoolId: resolvedSchoolId,
+    school,
     stats: {
-      totalChildren,
-      teachers,
-      parentEngagementPercent,
-      attendancePercent,
-      engagementNote,
-      attendanceNote,
+      children: childrenCount || 0,
+      teachers: teachersCount || 0,
+      parents: parentsCount || 0,
+      classrooms: classroomsCount || 0,
     },
-    classrooms,
-    incidents,
+    recentActivities: recentActivities || [],
   };
+}
+
+// ============================================================
+// TEACHERS MANAGEMENT
+// ============================================================
+export async function getTeachers() {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select(`
+      *,
+      teacher_classroom (
+        classroom_id,
+        classrooms (
+          id,
+          name
+        )
+      )
+    `)
+    .eq("school_id", user.school_id)
+    .eq("role", "TEACHER")
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function inviteTeacher(email: string, name: string) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  // Check if user already exists
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .single();
+
+  if (existing) {
+    throw new Error("User with this email already exists");
+  }
+
+  // Create invite
+  const token = crypto.randomUUID();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+  const { data, error } = await supabase
+    .from("invites")
+    .insert({
+      school_id: user.school_id,
+      email,
+      role: "TEACHER",
+      invited_by: user.id,
+      token,
+      expires_at: expiresAt.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTeacher(teacherId: string) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  // Verify teacher belongs to same school
+  const { data: teacher } = await supabase
+    .from("users")
+    .select("school_id")
+    .eq("id", teacherId)
+    .single();
+
+  if (!teacher || teacher.school_id !== user.school_id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", teacherId);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+// ============================================================
+// CHILDREN MANAGEMENT
+// ============================================================
+export async function getChildren() {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("children")
+    .select(`
+      *,
+      classrooms (
+        id,
+        name,
+        age_group
+      ),
+      parent_child (
+        users (
+          id,
+          name,
+          email,
+          phone
+        )
+      )
+    `)
+    .eq("school_id", user.school_id)
+    .order("first_name", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addChild(childData: {
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  gender?: string;
+  classroom_id?: number;
+  allergies?: string;
+  medical_notes?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+}) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("children")
+    .insert({
+      ...childData,
+      school_id: user.school_id,
+      status: "active",
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateChild(childId: number, updates: Record<string, any>) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  // Verify child belongs to same school
+  const { data: child } = await supabase
+    .from("children")
+    .select("school_id")
+    .eq("id", childId)
+    .single();
+
+  if (!child || child.school_id !== user.school_id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data, error } = await supabase
+    .from("children")
+    .update(updates)
+    .eq("id", childId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteChild(childId: number) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data: child } = await supabase
+    .from("children")
+    .select("school_id")
+    .eq("id", childId)
+    .single();
+
+  if (!child || child.school_id !== user.school_id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { error } = await supabase
+    .from("children")
+    .delete()
+    .eq("id", childId);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+// ============================================================
+// PARENTS MANAGEMENT
+// ============================================================
+export async function getParents() {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select(`
+      *,
+      parent_child (
+        children (
+          id,
+          first_name,
+          last_name
+        )
+      )
+    `)
+    .eq("school_id", user.school_id)
+    .eq("role", "PARENT")
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function inviteParent(email: string, name: string) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .single();
+
+  if (existing) {
+    throw new Error("User with this email already exists");
+  }
+
+  const token = crypto.randomUUID();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  const { data, error } = await supabase
+    .from("invites")
+    .insert({
+      school_id: user.school_id,
+      email,
+      role: "PARENT",
+      invited_by: user.id,
+      token,
+      expires_at: expiresAt.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function linkParentToChild(parentId: string, childId: number, relationship: string = "parent") {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  // Verify both parent and child belong to same school
+  const [{ data: parent }, { data: child }] = await Promise.all([
+    supabase.from("users").select("school_id").eq("id", parentId).single(),
+    supabase.from("children").select("school_id").eq("id", childId).single(),
+  ]);
+
+  if (!parent || !child || parent.school_id !== user.school_id || child.school_id !== user.school_id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data, error } = await supabase
+    .from("parent_child")
+    .insert({
+      parent_id: parentId,
+      child_id: childId,
+      relationship,
+      school_id: user.school_id,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function unlinkParentFromChild(parentId: string, childId: number) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { error } = await supabase
+    .from("parent_child")
+    .delete()
+    .eq("parent_id", parentId)
+    .eq("child_id", childId)
+    .eq("school_id", user.school_id);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+// ============================================================
+// CLASSROOMS MANAGEMENT
+// ============================================================
+export async function getClassrooms() {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("classrooms")
+    .select(`
+      *,
+      children (id),
+      teacher_classroom (
+        users (
+          id,
+          name,
+          email
+        )
+      )
+    `)
+    .eq("school_id", user.school_id)
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addClassroom(classroomData: {
+  name: string;
+  age_group?: string;
+  capacity?: number;
+}) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("classrooms")
+    .insert({
+      ...classroomData,
+      school_id: user.school_id,
+      status: "active",
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateClassroom(classroomId: number, updates: Record<string, any>) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data: classroom } = await supabase
+    .from("classrooms")
+    .select("school_id")
+    .eq("id", classroomId)
+    .single();
+
+  if (!classroom || classroom.school_id !== user.school_id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data, error } = await supabase
+    .from("classrooms")
+    .update(updates)
+    .eq("id", classroomId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteClassroom(classroomId: number) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data: classroom } = await supabase
+    .from("classrooms")
+    .select("school_id")
+    .eq("id", classroomId)
+    .single();
+
+  if (!classroom || classroom.school_id !== user.school_id) {
+    throw new Error("Unauthorized");
+  }
+
+  const { error } = await supabase
+    .from("classrooms")
+    .delete()
+    .eq("id", classroomId);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function assignTeacherToClassroom(teacherId: string, classroomId: number, isPrimary: boolean = false) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("teacher_classroom")
+    .insert({
+      teacher_id: teacherId,
+      classroom_id: classroomId,
+      school_id: user.school_id,
+      is_primary: isPrimary,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function removeTeacherFromClassroom(teacherId: string, classroomId: number) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { error } = await supabase
+    .from("teacher_classroom")
+    .delete()
+    .eq("teacher_id", teacherId)
+    .eq("classroom_id", classroomId)
+    .eq("school_id", user.school_id);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+// ============================================================
+// SCHOOL SETTINGS
+// ============================================================
+export async function getSchoolSettings() {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("schools")
+    .select("*")
+    .eq("id", user.school_id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSchoolSettings(updates: Record<string, any>) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { data, error } = await supabase
+    .from("schools")
+    .update(updates)
+    .eq("id", user.school_id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }

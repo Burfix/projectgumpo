@@ -1,56 +1,143 @@
-import { protectRoute } from "@/lib/auth/middleware";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { 
-  getParentChildren, 
-  getChildTodaySummary,
-  getChildDailyTimeline,
-  getUnreadMessageCount 
-} from "@/lib/db/parentDashboard";
+import { useRouter } from "next/navigation";
 
-export default async function ParentDashboard() {
-  let user;
-  try {
-    user = await protectRoute(["PARENT", "TEACHER", "ADMIN", "PRINCIPAL", "SUPER_ADMIN"]);
-  } catch (error) {
-    console.error("Auth error:", error);
-    throw error;
+type Child = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  classroom_id?: number;
+  photo_url?: string;
+  date_of_birth?: string;
+  allergies?: string;
+};
+
+type ChildSummary = {
+  attendance: { check_in_time?: string; check_out_time?: string } | null;
+  meals: { meal_type: string; amount_eaten: string }[];
+  naps: { start_time: string; end_time?: string; quality?: string }[];
+  incidents: { incident_type: string; severity: string }[];
+  has_checked_in: boolean;
+  has_checked_out: boolean;
+};
+
+type TimelineEvent = {
+  type: string;
+  time: string;
+  data: Record<string, unknown>;
+};
+
+export default function ParentDashboard() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [todaySummary, setTodaySummary] = useState<ChildSummary | null>(null);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    fetchDashboardData();
+    // Refresh every 30 seconds for real-time updates
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchDashboardData() {
+    try {
+      const response = await fetch("/api/parent/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard data");
+      }
+      const data = await response.json();
+      
+      setChildren(data.children || []);
+      setUnreadMessages(data.unreadMessages || 0);
+      
+      // Set first child as selected
+      if (data.children?.length > 0) {
+        const firstChild = data.children[0];
+        setSelectedChild(firstChild);
+        
+        // Get summary for first child
+        const childSummary = data.childSummaries?.find((s: { childId: number }) => s.childId === firstChild.id);
+        setTodaySummary(childSummary?.summary || null);
+        
+        // Fetch timeline for first child
+        const timelineResponse = await fetch(`/api/parent/timeline?childId=${firstChild.id}`);
+        if (timelineResponse.ok) {
+          const timelineData = await timelineResponse.json();
+          setTimeline(timelineData.timeline || []);
+        }
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError("Failed to load dashboard. Please try again.");
+      setLoading(false);
+    }
   }
 
-  // Get user's profile
-  const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from('users')
-    .select('id, name, school_id')
-    .eq('email', user.email)
-    .single();
+  async function switchChild(child: Child) {
+    setSelectedChild(child);
+    setLoading(true);
+    
+    try {
+      // Fetch child-specific data
+      const [summaryResponse, timelineResponse] = await Promise.all([
+        fetch("/api/parent/stats"),
+        fetch(`/api/parent/timeline?childId=${child.id}`)
+      ]);
 
-  // Get parent's children
-  const children = profile?.id ? await getParentChildren(profile.id) : [];
-  const currentChild = children[0] || null;
+      if (summaryResponse.ok) {
+        const data = await summaryResponse.json();
+        const childSummary = data.childSummaries?.find((s: { childId: number }) => s.childId === child.id);
+        setTodaySummary(childSummary?.summary || null);
+      }
 
-  // Get today's data for the first child
-  let todaySummary = null;
-  let timeline: Awaited<ReturnType<typeof getChildDailyTimeline>> = [];
-  let unreadCount = 0;
-
-  if (currentChild && profile?.id) {
-    [todaySummary, timeline, unreadCount] = await Promise.all([
-      getChildTodaySummary(currentChild.id),
-      getChildDailyTimeline(currentChild.id),
-      getUnreadMessageCount(profile.id),
-    ]);
+      if (timelineResponse.ok) {
+        const timelineData = await timelineResponse.json();
+        setTimeline(timelineData.timeline || []);
+      }
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Error switching child:", err);
+      setLoading(false);
+    }
   }
 
-  // Get classroom name
-  let classroomName = 'Not assigned';
-  if (currentChild?.classroom_id) {
-    const { data: classroom } = await supabase
-      .from('classrooms')
-      .select('name')
-      .eq('id', currentChild.classroom_id)
-      .single();
-    classroomName = classroom?.name || 'Not assigned';
+  if (loading && !selectedChild) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-stone-600">Loading your children&apos;s day...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md text-center">
+          <div className="text-5xl mb-4">😔</div>
+          <h2 className="text-xl font-semibold text-stone-900 mb-2">Oops!</h2>
+          <p className="text-stone-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </main>
+    );
   }
 
   // Calculate nap duration
@@ -66,25 +153,33 @@ export default async function ParentDashboard() {
   const napMins = totalNapMinutes % 60;
   const napDisplay = totalNapMinutes > 0 ? `${napHours}h ${napMins}m` : 'No nap yet';
 
-  // Count meals eaten
-  const mealsEaten = todaySummary?.meals?.filter(m => m.amount_eaten !== 'none' && m.amount_eaten !== 'refused').length || 0;
+  // Count meals eaten well
+  const mealsEaten = todaySummary?.meals?.filter(m => 
+    m.amount_eaten === 'all' || m.amount_eaten === 'most'
+  ).length || 0;
   const totalMeals = todaySummary?.meals?.length || 0;
 
+
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
       {/* Navigation Header */}
-      <nav className="bg-white border-b border-stone-200 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-stone-900">Project Gumpo</h1>
+      <nav className="bg-white/80 backdrop-blur-lg border-b border-stone-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-stone-900">Project Gumpo</h1>
+            <p className="text-xs text-stone-500 mt-0.5">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+          </div>
           <div className="flex items-center gap-3">
-            {unreadCount > 0 && (
-              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                {unreadCount}
-              </span>
+            {unreadMessages > 0 && (
+              <Link href="/dashboard/parent/messages" className="relative">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <span className="text-emerald-700 text-lg">💬</span>
+                </div>
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                  {unreadMessages}
+                </span>
+              </Link>
             )}
-            <div className="text-xs text-stone-500">
-              {profile?.name || user.email?.split('@')[0]}
-            </div>
           </div>
         </div>
       </nav>
@@ -92,178 +187,235 @@ export default async function ParentDashboard() {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* No Children Linked */}
-        {!currentChild && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-yellow-800">No Children Linked</h2>
-            <p className="text-yellow-700 mt-1">
-              Your account hasn&apos;t been linked to any children yet. Please contact your school administrator.
+        {children.length === 0 && (
+          <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
+            <div className="text-6xl mb-4">👶</div>
+            <h2 className="text-2xl font-bold text-stone-900 mb-2">Welcome to Project Gumpo!</h2>
+            <p className="text-stone-600 leading-relaxed">
+              Your account hasn&apos;t been linked to any children yet. 
+              <br />Please contact your school administrator.
             </p>
           </div>
         )}
 
-        {/* Child Card */}
-        {currentChild && (
-          <div className="bg-white rounded-2xl border border-stone-200 p-6">
-            <div className="flex items-start gap-4 mb-5">
-              <div className="w-16 h-16 rounded-full bg-stone-200 flex-shrink-0 overflow-hidden">
-                <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center text-2xl font-semibold text-emerald-700">
-                  {currentChild.first_name[0]}
-                </div>
+        {/* Child Selector - Multiple Children */}
+        {children.length > 1 && (
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {children.map((child) => (
+              <button
+                key={child.id}
+                onClick={() => switchChild(child)}
+                className={`flex-shrink-0 px-5 py-3 rounded-2xl font-medium text-sm transition-all ${
+                  selectedChild?.id === child.id
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
+                    : 'bg-white text-stone-700 border-2 border-stone-200 hover:border-emerald-300'
+                }`}
+              >
+                {child.first_name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Child Profile Card */}
+        {selectedChild && (
+          <div className="bg-gradient-to-br from-emerald-500 to-blue-500 rounded-3xl shadow-xl p-6 text-white">
+            <div className="flex items-start gap-4">
+              <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex-shrink-0 overflow-hidden border-2 border-white/30">
+                {selectedChild.photo_url ? (
+                  <img src={selectedChild.photo_url} alt={selectedChild.first_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white">
+                    {selectedChild.first_name[0]}
+                  </div>
+                )}
               </div>
               <div className="flex-grow">
-                <h2 className="text-xl font-semibold text-stone-900">
-                  {currentChild.first_name} {currentChild.last_name}
+                <h2 className="text-2xl font-bold mb-1">
+                  {selectedChild.first_name} {selectedChild.last_name}
                 </h2>
-                <p className="text-sm text-stone-500 mt-0.5">{classroomName}</p>
-                <div className="mt-2">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                {selectedChild.date_of_birth && (
+                  <p className="text-sm text-white/80">
+                    Age: {Math.floor((new Date().getTime() - new Date(selectedChild.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} years
+                  </p>
+                )}
+                <div className="mt-3">
+                  <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold ${
                     todaySummary?.has_checked_in && !todaySummary?.has_checked_out
-                      ? 'bg-emerald-50 text-emerald-700'
+                      ? 'bg-white text-emerald-700'
                       : todaySummary?.has_checked_out
-                      ? 'bg-stone-100 text-stone-600'
-                      : 'bg-stone-100 text-stone-600'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-white/20 text-white'
                   }`}>
                     {todaySummary?.has_checked_in && !todaySummary?.has_checked_out
-                      ? 'In Care'
+                      ? '✓ In Care Now'
                       : todaySummary?.has_checked_out
-                      ? 'Picked Up'
-                      : 'Not Arrived'}
+                      ? '👋 Picked Up'
+                      : '⏰ Not Arrived'}
                   </span>
                 </div>
               </div>
             </div>
-
-            {/* Multiple children selector */}
-            {children.length > 1 && (
-              <div className="flex gap-2 mt-4 pt-4 border-t border-stone-100">
-                {children.map((child) => (
-                  <button
-                    key={child.id}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      child.id === currentChild.id
-                        ? 'bg-stone-900 text-white'
-                        : 'bg-stone-100 text-stone-600'
-                    }`}
-                  >
-                    {child.first_name}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
-        {/* Today at a Glance */}
-        {currentChild && (
+        {/* Today's Highlights */}
+        {selectedChild && (
           <div>
-            <h3 className="text-base font-semibold text-stone-900 mb-3 px-1">Today at a Glance</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-xl border border-stone-200 p-4">
-                <p className="text-xs text-stone-500 mb-1">Arrival</p>
-                <p className="text-2xl font-semibold text-stone-900">
+            <h3 className="text-lg font-bold text-stone-900 mb-4 px-1">📊 Today&apos;s Highlights</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Arrival Time */}
+              <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🕐</span>
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Arrival</p>
+                </div>
+                <p className="text-2xl font-bold text-stone-900">
                   {todaySummary?.attendance?.check_in_time 
                     ? new Date(todaySummary.attendance.check_in_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
                     : '—'}
                 </p>
               </div>
-              <div className="bg-white rounded-xl border border-stone-200 p-4">
-                <p className="text-xs text-stone-500 mb-1">Nap</p>
-                <p className="text-2xl font-semibold text-stone-900">{napDisplay}</p>
+
+              {/* Nap Duration */}
+              <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">😴</span>
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Nap Time</p>
+                </div>
+                <p className="text-2xl font-bold text-stone-900">{napDisplay}</p>
               </div>
-              <div className="bg-white rounded-xl border border-stone-200 p-4">
-                <p className="text-xs text-stone-500 mb-1">Meals</p>
-                <p className="text-base font-medium text-stone-900">
-                  {totalMeals > 0 ? `${mealsEaten} of ${totalMeals} eaten` : 'No meals logged'}
+
+              {/* Meals */}
+              <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🍽️</span>
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Meals</p>
+                </div>
+                <p className="text-base font-bold text-stone-900">
+                  {totalMeals > 0 ? `${mealsEaten} eaten well` : 'No meals yet'}
                 </p>
+                {totalMeals > 0 && (
+                  <p className="text-xs text-stone-500 mt-1">out of {totalMeals} served</p>
+                )}
               </div>
-              <div className="bg-white rounded-xl border border-stone-200 p-4">
-                <p className="text-xs text-stone-500 mb-1">Incidents</p>
-                <p className={`text-base font-medium ${todaySummary?.incidents?.length ? 'text-orange-600' : 'text-stone-900'}`}>
-                  {todaySummary?.incidents?.length || 0} today
+
+              {/* Incidents */}
+              <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{todaySummary?.incidents?.length ? '⚠️' : '✅'}</span>
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Status</p>
+                </div>
+                <p className={`text-base font-bold ${todaySummary?.incidents?.length ? 'text-orange-600' : 'text-emerald-600'}`}>
+                  {todaySummary?.incidents?.length ? `${todaySummary.incidents.length} incident${todaySummary.incidents.length > 1 ? 's' : ''}` : 'All good!'}
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Today's Timeline */}
-        {currentChild && timeline.length > 0 && (
+        {/* Today's Activity Timeline */}
+        {selectedChild && timeline.length > 0 && (
           <div>
-            <h3 className="text-base font-semibold text-stone-900 mb-3 px-1">Today&apos;s Moments</h3>
-            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+            <h3 className="text-lg font-bold text-stone-900 mb-4 px-1">⏰ Today&apos;s Timeline</h3>
+            <div className="bg-white rounded-2xl shadow-lg border border-stone-100 overflow-hidden">
               <div className="divide-y divide-stone-100">
-                {timeline.map((event, i) => {
+                {timeline.slice(0, 5).map((event, i) => {
                   const time = new Date(event.time).toLocaleTimeString('en-US', { 
                     hour: 'numeric', 
                     minute: '2-digit' 
                   });
                   
+                  let icon = '📍';
                   let activity = '';
+                  let color = 'text-stone-700';
+
                   switch (event.type) {
                     case 'check_in':
+                      icon = '🚪';
                       activity = 'Arrived at school';
+                      color = 'text-emerald-700';
                       break;
                     case 'check_out':
-                      activity = 'Picked up';
+                      icon = '👋';
+                      activity = 'Picked up from school';
+                      color = 'text-blue-700';
                       break;
                     case 'meal':
+                      icon = '🍽️';
                       const meal = event.data as { meal_type?: string; amount_eaten?: string };
                       activity = `${meal.meal_type || 'Meal'} — ${meal.amount_eaten || 'logged'}`;
+                      color = 'text-amber-700';
                       break;
                     case 'nap_start':
-                      activity = 'Nap started';
+                      icon = '😴';
+                      activity = 'Nap time started';
+                      color = 'text-indigo-700';
                       break;
                     case 'nap_end':
+                      icon = '🌟';
                       const nap = event.data as { quality?: string };
-                      activity = `Woke up${nap.quality ? ` — ${nap.quality}` : ''}`;
+                      activity = `Woke up${nap.quality ? ` — ${nap.quality} rest` : ''}`;
+                      color = 'text-purple-700';
                       break;
                     case 'incident':
+                      icon = '⚠️';
                       const incident = event.data as { incident_type?: string; severity?: string };
-                      activity = `⚠️ ${incident.incident_type || 'Incident'} (${incident.severity || 'reported'})`;
+                      activity = `${incident.incident_type || 'Incident'} (${incident.severity || 'minor'})`;
+                      color = 'text-orange-700';
                       break;
-                    default:
-                      activity = 'Activity logged';
                   }
 
                   return (
-                    <div key={i} className="p-4">
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-12 text-right">
-                          <p className="text-xs text-stone-500 font-medium">{time}</p>
+                    <div key={i} className="p-4 hover:bg-stone-50 transition-colors">
+                      <div className="flex gap-4 items-start">
+                        <div className="flex-shrink-0">
+                          <span className="text-2xl">{icon}</span>
                         </div>
                         <div className="flex-grow">
-                          <p className="text-sm text-stone-700 leading-relaxed">{activity}</p>
+                          <p className={`text-sm font-semibold ${color} mb-0.5`}>{activity}</p>
+                          <p className="text-xs text-stone-500">{time}</p>
                         </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
+              {timeline.length > 5 && (
+                <Link 
+                  href={`/dashboard/parent/timeline?childId=${selectedChild?.id}`}
+                  className="block p-4 text-center text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                >
+                  View all {timeline.length} activities →
+                </Link>
+              )}
             </div>
           </div>
         )}
 
         {/* No Activity Today */}
-        {currentChild && timeline.length === 0 && (
-          <div className="bg-stone-100 rounded-2xl p-6 text-center">
-            <p className="text-stone-600">No activity logged yet today.</p>
+        {selectedChild && timeline.length === 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-stone-100 p-8 text-center">
+            <span className="text-5xl mb-3 block">🌅</span>
+            <p className="text-stone-600 font-medium">No activity logged yet today.</p>
+            <p className="text-sm text-stone-500 mt-1">Check back soon!</p>
           </div>
         )}
 
-        {/* Message Teacher */}
-        {currentChild && (
-          <div className="pb-6">
+        {/* Quick Actions */}
+        {selectedChild && (
+          <div className="space-y-3 pb-8">
             <Link 
-              href="/dashboard/parent/timeline"
-              className="block w-full px-4 py-3 bg-stone-900 text-white rounded-xl hover:bg-stone-800 text-sm font-medium text-center mb-3"
+              href={`/dashboard/parent/children/${selectedChild.id}`}
+              className="block w-full px-6 py-4 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-2xl hover:from-emerald-700 hover:to-blue-700 text-base font-semibold text-center shadow-lg transition-all transform hover:scale-105"
             >
-              View Full Timeline
+              📱 View Full Profile & History
             </Link>
             <Link 
               href="/dashboard/parent/messages"
-              className="block w-full px-4 py-3 bg-white border border-stone-300 text-stone-700 rounded-xl hover:bg-stone-50 text-sm font-medium text-center"
+              className="block w-full px-6 py-4 bg-white border-2 border-stone-300 text-stone-700 rounded-2xl hover:border-emerald-400 hover:bg-emerald-50 text-base font-semibold text-center transition-all"
             >
-              Message Teacher {unreadCount > 0 && `(${unreadCount} unread)`}
+              💬 Message Teacher {unreadMessages > 0 && `(${unreadMessages} new)`}
             </Link>
           </div>
         )}
