@@ -29,10 +29,28 @@ interface Child {
   }>;
 }
 
+interface Parent {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Classroom {
+  id: number;
+  name: string;
+}
+
 export default function ChildrenPage() {
   const [children, setChildren] = useState<Child[]>([]);
+  const [filteredChildren, setFilteredChildren] = useState<Child[]>([]);
+  const [parents, setParents] = useState<Parent[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showAssignParentModal, setShowAssignParentModal] = useState(false);
+  const [showAssignClassModal, setShowAssignClassModal] = useState(false);
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -43,10 +61,35 @@ export default function ChildrenPage() {
     emergency_contact_name: "",
     emergency_contact_phone: "",
   });
+  const [assignData, setAssignData] = useState({
+    parent_id: "",
+    classroom_id: "",
+    relationship: "parent" as const,
+    is_primary: true,
+    can_pickup: true,
+  });
 
   useEffect(() => {
     fetchChildren();
+    fetchParents();
+    fetchClassrooms();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredChildren(children);
+    } else {
+      const query = searchQuery.toLowerCase();
+      setFilteredChildren(
+        children.filter(
+          (child) =>
+            child.first_name.toLowerCase().includes(query) ||
+            child.last_name.toLowerCase().includes(query) ||
+            child.classrooms?.name.toLowerCase().includes(query)
+        )
+      );
+    }
+  }, [searchQuery, children]);
 
   const fetchChildren = async () => {
     try {
@@ -54,10 +97,33 @@ export default function ChildrenPage() {
       if (!response.ok) throw new Error("Failed to fetch children");
       const data = await response.json();
       setChildren(data);
+      setFilteredChildren(data);
     } catch (error) {
       console.error("Error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchParents = async () => {
+    try {
+      const response = await fetch("/api/admin/parents");
+      if (!response.ok) throw new Error("Failed to fetch parents");
+      const data = await response.json();
+      setParents(data);
+    } catch (error) {
+      console.error("Error fetching parents:", error);
+    }
+  };
+
+  const fetchClassrooms = async () => {
+    try {
+      const response = await fetch("/api/admin/classrooms");
+      if (!response.ok) throw new Error("Failed to fetch classrooms");
+      const data = await response.json();
+      setClassrooms(data);
+    } catch (error) {
+      console.error("Error fetching classrooms:", error);
     }
   };
 
@@ -87,6 +153,67 @@ export default function ChildrenPage() {
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to add child");
+    }
+  };
+
+  const handleAssignParent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedChild) return;
+
+    try {
+      const response = await fetch("/api/admin/parents/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parent_id: assignData.parent_id,
+          child_id: selectedChild.id,
+          relationship: assignData.relationship,
+          is_primary: assignData.is_primary,
+          can_pickup: assignData.can_pickup,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to assign parent");
+      }
+
+      alert("Parent assigned successfully!");
+      setShowAssignParentModal(false);
+      setSelectedChild(null);
+      await fetchChildren();
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert(error.message || "Failed to assign parent");
+    }
+  };
+
+  const handleAssignClassroom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedChild) return;
+
+    try {
+      const response = await fetch("/api/admin/children/assign-classroom", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          child_id: selectedChild.id,
+          classroom_id: parseInt(assignData.classroom_id),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to assign classroom");
+      }
+
+      alert("Classroom assigned successfully!");
+      setShowAssignClassModal(false);
+      setSelectedChild(null);
+      await fetchChildren();
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert(error.message || "Failed to assign classroom");
     }
   };
 
@@ -124,6 +251,17 @@ export default function ChildrenPage() {
         >
           {showAddForm ? "Cancel" : "+ Add Child"}
         </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="🔍 Search children by name or classroom..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+        />
       </div>
 
       {/* Add Form */}
@@ -184,56 +322,6 @@ export default function ChildrenPage() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Emergency Contact Name
-              </label>
-              <input
-                type="text"
-                value={formData.emergency_contact_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, emergency_contact_name: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Emergency Contact Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.emergency_contact_phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, emergency_contact_phone: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Allergies</label>
-              <textarea
-                value={formData.allergies}
-                onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={2}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Medical Notes
-              </label>
-              <textarea
-                value={formData.medical_notes}
-                onChange={(e) => setFormData({ ...formData, medical_notes: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={2}
-              />
-            </div>
-
             <div className="md:col-span-2">
               <button
                 type="submit"
@@ -248,9 +336,9 @@ export default function ChildrenPage() {
 
       {/* Children List */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {children.length === 0 ? (
+        {filteredChildren.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No children found. Add your first child to get started.
+            {searchQuery ? "No children found matching your search." : "No children found. Add your first child to get started."}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -270,15 +358,12 @@ export default function ChildrenPage() {
                     Parents
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {children.map((child) => {
+                {filteredChildren.map((child) => {
                   const age = child.date_of_birth
                     ? Math.floor(
                         (new Date().getTime() - new Date(child.date_of_birth).getTime()) /
@@ -292,15 +377,22 @@ export default function ChildrenPage() {
                         <div className="text-sm font-medium text-gray-900">
                           {child.first_name} {child.last_name}
                         </div>
-                        {child.gender && (
-                          <div className="text-sm text-gray-500 capitalize">{child.gender}</div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {age !== null ? `${age} years` : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {child.classrooms?.name || "Not assigned"}
+                        {child.classrooms?.name || (
+                          <button
+                            onClick={() => {
+                              setSelectedChild(child);
+                              setShowAssignClassModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Assign Classroom
+                          </button>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {child.parent_child && child.parent_child.length > 0 ? (
@@ -312,21 +404,19 @@ export default function ChildrenPage() {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-gray-400">No parents linked</span>
+                          <span className="text-gray-400">No parents</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            child.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => {
+                            setSelectedChild(child);
+                            setShowAssignParentModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 mr-3"
                         >
-                          {child.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          + Parent
+                        </button>
                         <button
                           onClick={() => handleDelete(child.id)}
                           className="text-red-600 hover:text-red-900"
@@ -342,6 +432,154 @@ export default function ChildrenPage() {
           </div>
         )}
       </div>
+
+      {/* Assign Parent Modal */}
+      {showAssignParentModal && selectedChild && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold mb-4">
+              Assign Parent to {selectedChild.first_name} {selectedChild.last_name}
+            </h2>
+            <form onSubmit={handleAssignParent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Parent *
+                </label>
+                <select
+                  required
+                  value={assignData.parent_id}
+                  onChange={(e) => setAssignData({ ...assignData, parent_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a parent --</option>
+                  {parents.map((parent) => (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.name} ({parent.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Relationship *
+                </label>
+                <select
+                  required
+                  value={assignData.relationship}
+                  onChange={(e) =>
+                    setAssignData({ ...assignData, relationship: e.target.value as any })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="parent">Parent</option>
+                  <option value="guardian">Guardian</option>
+                  <option value="grandparent">Grandparent</option>
+                  <option value="emergency_contact">Emergency Contact</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={assignData.is_primary}
+                    onChange={(e) =>
+                      setAssignData({ ...assignData, is_primary: e.target.checked })
+                    }
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">Primary Contact</span>
+                </label>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={assignData.can_pickup}
+                    onChange={(e) =>
+                      setAssignData({ ...assignData, can_pickup: e.target.checked })
+                    }
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">Can Pickup</span>
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAssignParentModal(false);
+                    setSelectedChild(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Assign Parent
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Classroom Modal */}
+      {showAssignClassModal && selectedChild && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold mb-4">
+              Assign Classroom to {selectedChild.first_name} {selectedChild.last_name}
+            </h2>
+            <form onSubmit={handleAssignClassroom} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Classroom *
+                </label>
+                <select
+                  required
+                  value={assignData.classroom_id}
+                  onChange={(e) =>
+                    setAssignData({ ...assignData, classroom_id: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a classroom --</option>
+                  {classrooms.map((classroom) => (
+                    <option key={classroom.id} value={classroom.id}>
+                      {classroom.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAssignClassModal(false);
+                    setSelectedChild(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Assign Classroom
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
