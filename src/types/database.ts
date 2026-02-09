@@ -11,7 +11,7 @@ export interface User {
   full_name: string;
   name?: string;
   role: UserRole;
-  school_id: string | null; // UUID
+  school_id: number | null; // BIGINT from schools table
   phone?: string;
   avatar_url?: string;
   created_at: string;
@@ -26,7 +26,7 @@ export type SubscriptionTier = 'Starter' | 'Growth' | 'Professional' | 'Enterpri
 export type SchoolType = 'Preschool' | 'Crèche' | 'Primary' | 'Other';
 
 export interface School {
-  id: string; // UUID
+  id: number; // BIGSERIAL from schools table
   name: string;
   location?: string;
   city?: string;
@@ -56,7 +56,7 @@ export interface SchoolWithStats extends School {
 export interface Classroom {
   id: number;
   name: string;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   capacity: number;
   age_group?: string;
   description?: string;
@@ -77,7 +77,7 @@ export type Gender = 'male' | 'female' | 'other';
 
 export interface Child {
   id: number;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   classroom_id: number | null;
   first_name: string;
   last_name: string;
@@ -129,7 +129,7 @@ export interface AttendanceLog {
   id: number;
   child_id: number;
   classroom_id: number | null;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   logged_by: string; // UUID
   check_in_time?: string;
   check_out_time?: string;
@@ -154,7 +154,7 @@ export interface MealLog {
   id: number;
   child_id: number;
   classroom_id: number | null;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   logged_by: string; // UUID
   meal_type: MealType;
   amount_eaten?: AmountEaten;
@@ -176,7 +176,7 @@ export interface NapLog {
   id: number;
   child_id: number;
   classroom_id: number | null;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   logged_by: string; // UUID
   start_time: string;
   end_time?: string;
@@ -201,7 +201,7 @@ export interface IncidentReport {
   id: number;
   child_id: number;
   classroom_id: number | null;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   reported_by: string; // UUID
   incident_type: IncidentType;
   severity: IncidentSeverity;
@@ -226,7 +226,7 @@ export type ActivityType = 'art' | 'music' | 'outdoor' | 'learning' | 'play' | '
 export interface DailyActivity {
   id: number;
   classroom_id: number;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   created_by: string; // UUID
   activity_type: ActivityType;
   title: string;
@@ -244,7 +244,7 @@ export type MessageType = 'direct' | 'announcement' | 'alert' | 'reminder';
 
 export interface Message {
   id: number;
-  school_id: string; // UUID
+  school_id: number; // BIGINT references schools(id)
   sender_id: string; // UUID
   recipient_id?: string; // UUID
   classroom_id?: number;
@@ -266,7 +266,7 @@ export interface MessageWithDetails extends Message {
 export interface AuditLog {
   id: number;
   user_id?: string; // UUID
-  school_id?: string; // UUID
+  school_id?: number; // BIGINT references schools(id)
   action: string;
   entity_type: string;
   entity_id?: string;
