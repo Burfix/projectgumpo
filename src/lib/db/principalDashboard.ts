@@ -531,3 +531,68 @@ export async function updateSchoolSettings(updates: Record<string, any>) {
   if (error) throw error;
   return data;
 }
+
+// ============================================================
+// PARENT-CHILD ASSIGNMENT
+// ============================================================
+export async function assignChildToParent(params: {
+  parent_id: string;
+  child_id: number;
+  relationship?: string;
+  is_primary?: boolean;
+  can_pickup?: boolean;
+}) {
+  const { user, supabase } = await getAuthenticatedPrincipal();
+
+  const { parent_id, child_id, relationship, is_primary, can_pickup } = params;
+
+  // Verify both parent and child belong to same school
+  const [{ data: parent }, { data: child }] = await Promise.all([
+    supabase.from("users").select("school_id, role").eq("id", parent_id).single(),
+    supabase.from("children").select("school_id").eq("id", child_id).single(),
+  ]);
+
+  if (!parent || !child) {
+    throw new Error("Parent or child not found");
+  }
+
+  if (parent.school_id !== user.school_id || child.school_id !== user.school_id) {
+    throw new Error("Unauthorized: Parent and child must belong to your school");
+  }
+
+  if (parent.role !== "PARENT") {
+    throw new Error("User is not a parent");
+  }
+
+  // Check if relationship already exists
+  const { data: existing } = await supabase
+    .from("parent_child")
+    .select("id")
+    .eq("parent_id", parent_id)
+    .eq("child_id", child_id)
+    .single();
+
+  if (existing) {
+    throw new Error("Parent is already linked to this child");
+  }
+
+  // Create the parent-child relationship
+  const { data, error } = await supabase
+    .from("parent_child")
+    .insert({
+      parent_id,
+      child_id,
+      relationship: relationship || "parent",
+      is_primary: is_primary ?? true,
+      can_pickup: can_pickup ?? true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error assigning child to parent:", error);
+    throw new Error(error.message || "Failed to assign child to parent");
+  }
+
+  return data;
+}
