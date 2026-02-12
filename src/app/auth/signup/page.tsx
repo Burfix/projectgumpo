@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import supabase from "@/lib/supabase/client";
 
 function parseHashParams(hash: string): Record<string, string> {
   if (!hash) return {};
@@ -36,13 +36,13 @@ export default function SignupPage() {
         queryParams.get("refresh_token") ?? hashParams.refresh_token ?? "";
 
       if (accessToken && refreshToken) {
-        await supabaseBrowser.auth.setSession({
+        await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
       }
 
-      const { data } = await supabaseBrowser.auth.getUser();
+      const { data } = await supabase.auth.getUser();
       if (data.user?.email) {
         setEmail(data.user.email);
       }
@@ -69,7 +69,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const { data, error: updateError } = await supabaseBrowser.auth.updateUser({
+      const { data, error: updateError } = await supabase.auth.updateUser({
         password,
         data: {
           full_name: fullName,
@@ -82,14 +82,14 @@ export default function SignupPage() {
         return;
       }
 
-      const user = data.user ?? (await supabaseBrowser.auth.getUser()).data.user;
+      const user = data.user ?? (await supabase.auth.getUser()).data.user;
       const role =
         (user?.user_metadata?.role as string | undefined) ??
         (user?.app_metadata?.role as string | undefined) ??
         "PARENT";
 
       if (user?.id) {
-        await supabaseBrowser
+        await supabase
           .from("users")
           .upsert({ id: user.id, email: user.email, role }, { onConflict: "id" });
       }

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import supabase from "@/lib/supabase/client";
 
 export default function ResetPasswordClient() {
   const searchParams = useSearchParams();
@@ -20,7 +20,7 @@ export default function ResetPasswordClient() {
       // Check if user has an active session
       const {
         data: { session },
-      } = await supabaseBrowser.auth.getSession();
+      } = await supabase.auth.getSession();
 
       if (!session) {
         setError(
@@ -51,7 +51,7 @@ export default function ResetPasswordClient() {
     setLoading(true);
 
     try {
-      const { error } = await supabaseBrowser.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password,
       });
 

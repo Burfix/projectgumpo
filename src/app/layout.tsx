@@ -14,11 +14,6 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Project Goose - School Management",
   description: "Modern school management system with real-time updates and secure parent communication.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#10b981" },
-    { media: "(prefers-color-scheme: dark)", color: "#1f2937" },
-  ],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -38,6 +33,17 @@ export const metadata: Metadata = {
     ],
   },
 };
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
+export const themeColor = [
+  { media: "(prefers-color-scheme: light)", color: "#10b981" },
+  { media: "(prefers-color-scheme: dark)", color: "#1f2937" },
+];
 
 export default function RootLayout({
   children,

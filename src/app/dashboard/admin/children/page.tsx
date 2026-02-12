@@ -40,6 +40,15 @@ interface Classroom {
   name: string;
 }
 
+interface AssignData {
+  parent_id: string;
+  classroom_id: string;
+  relationship: "parent" | "guardian" | "grandparent" | "emergency_contact" | "other";
+  is_primary: boolean;
+  can_pickup: boolean;
+  parentSearch: string;
+}
+
 export default function ChildrenPage() {
   const [children, setChildren] = useState<Child[]>([]);
   const [filteredChildren, setFilteredChildren] = useState<Child[]>([]);
@@ -61,12 +70,13 @@ export default function ChildrenPage() {
     emergency_contact_name: "",
     emergency_contact_phone: "",
   });
-  const [assignData, setAssignData] = useState({
+  const [assignData, setAssignData] = useState<AssignData>({
     parent_id: "",
     classroom_id: "",
     relationship: "parent" as const,
     is_primary: true,
     can_pickup: true,
+    parentSearch: "",
   });
 
   useEffect(() => {
@@ -411,6 +421,14 @@ export default function ChildrenPage() {
                         <button
                           onClick={() => {
                             setSelectedChild(child);
+                            setAssignData({
+                              parent_id: "",
+                              classroom_id: "",
+                              relationship: "parent" as const,
+                              is_primary: true,
+                              can_pickup: true,
+                              parentSearch: "",
+                            });
                             setShowAssignParentModal(true);
                           }}
                           className="text-blue-600 hover:text-blue-800 mr-3"
@@ -434,6 +452,7 @@ export default function ChildrenPage() {
       </div>
 
       {/* Assign Parent Modal */}
+
       {showAssignParentModal && selectedChild && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
@@ -441,6 +460,16 @@ export default function ChildrenPage() {
               Assign Parent to {selectedChild.first_name} {selectedChild.last_name}
             </h2>
             <form onSubmit={handleAssignParent} className="space-y-4">
+              {/* Search input for parents */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="Search parents by name or email..."
+                  value={assignData.parentSearch || ''}
+                  onChange={e => setAssignData({ ...assignData, parentSearch: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Select Parent *
@@ -452,7 +481,13 @@ export default function ChildrenPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Select a parent --</option>
-                  {parents.map((parent) => (
+                  {(parents.filter(parent => {
+                    const q = (assignData.parentSearch || '').toLowerCase();
+                    return (
+                      parent.name.toLowerCase().includes(q) ||
+                      parent.email.toLowerCase().includes(q)
+                    );
+                  })).map((parent) => (
                     <option key={parent.id} value={parent.id}>
                       {parent.name} ({parent.email})
                     </option>
@@ -512,6 +547,14 @@ export default function ChildrenPage() {
                   onClick={() => {
                     setShowAssignParentModal(false);
                     setSelectedChild(null);
+                    setAssignData({
+                      parent_id: "",
+                      classroom_id: "",
+                      relationship: "parent" as const,
+                      is_primary: true,
+                      can_pickup: true,
+                      parentSearch: "",
+                    });
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >

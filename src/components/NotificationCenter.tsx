@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import supabase from "@/lib/supabase/client";
 
 interface Notification {
   id: number;
@@ -27,7 +27,7 @@ export default function NotificationCenter() {
 
   async function fetchNotifications() {
     try {
-      const supabase = createClient();
+      // use singleton supabase client
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) return;
@@ -54,7 +54,7 @@ export default function NotificationCenter() {
   }
 
   function subscribeToRealtime() {
-    const supabase = createClient();
+    // use singleton supabase client
     
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
@@ -93,7 +93,7 @@ export default function NotificationCenter() {
 
   async function markAsRead(notificationId: number) {
     try {
-      const supabase = createClient();
+      // use singleton supabase client
       const { error } = await supabase
         .from('notifications')
         .update({ read: true, read_at: new Date().toISOString() })
@@ -115,7 +115,7 @@ export default function NotificationCenter() {
 
   async function markAllAsRead() {
     try {
-      const supabase = createClient();
+      // use singleton supabase client
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) return;
