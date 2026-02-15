@@ -11,7 +11,11 @@ import { getCurrentUser, logAuditAction, validateSchoolAccess } from "@/lib/auth
 import { UserRole } from "@/lib/auth/rbac";
 import { revalidatePath } from "next/cache";
 import { ServerActionResult } from "./parent-child";
+import { validateServerAction, UserSchemas } from "@/lib/validation";
+import type { CreateUserInput as ZodCreateUserInput, UpdateUserInput as ZodUpdateUserInput } from "@/lib/validation/schemas";
 
+// Keep existing interfaces for backward compatibility but mark as deprecated
+/** @deprecated Use CreateUserInput from @/lib/validation/schemas instead */
 export interface CreateUserInput {
   email: string;
   name: string;
@@ -43,9 +47,21 @@ export interface AllocatePrincipalInput {
  * Can be called by SUPER_ADMIN (for any school) or ADMIN/PRINCIPAL (for their school)
  */
 export async function createUser(
-  input: CreateUserInput
+  input: CreateUserInput | ZodCreateUserInput
 ): Promise<ServerActionResult<{ userId: string }>> {
   try {
+    // Validate input with Zod
+    const validationResult = validateServerAction(UserSchemas.create, input);
+    if (!validationResult.success) {
+      return { 
+        success: false, 
+        error: validationResult.error,
+        details: validationResult.details 
+      };
+    }
+
+    const validatedInput = validationResult.data;
+
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return { success: false, error: "Unauthorized" };

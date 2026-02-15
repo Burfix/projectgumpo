@@ -20,6 +20,7 @@ export interface ServerActionResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  details?: Record<string, string[]>;
 }
 
 /**
