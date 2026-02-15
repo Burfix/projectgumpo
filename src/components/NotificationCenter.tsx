@@ -45,7 +45,7 @@ export default function NotificationCenter() {
       }
 
       setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      setUnreadCount(data?.filter((n: any) => !n.read).length || 0);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
@@ -56,7 +56,7 @@ export default function NotificationCenter() {
   function subscribeToRealtime() {
     // use singleton supabase client
     
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: any) => {
       if (!user) return;
 
       const channel = supabase
@@ -69,7 +69,7 @@ export default function NotificationCenter() {
             table: 'notifications',
             filter: `user_id=eq.${user.id}`,
           },
-          (payload) => {
+          (payload: any) => {
             const newNotification = payload.new as Notification;
             setNotifications(prev => [newNotification, ...prev]);
             setUnreadCount(prev => prev + 1);
