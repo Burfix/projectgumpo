@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuditLogs } from "@/lib/db/superAdminDashboard";
+import { logError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(logs);
   } catch (error: any) {
-    console.error("Get audit logs error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/super-admin/audit-logs' });
     return NextResponse.json(
       { error: error.message || "Failed to fetch audit logs" },
       { status: error.message === "Not authenticated" ? 401 : 500 }

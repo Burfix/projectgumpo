@@ -53,6 +53,44 @@ export function validate<T>(
 }
 
 /**
+ * Validate already-parsed body data
+ * @param schema - Zod schema to validate against
+ * @param data - Already-parsed data to validate
+ * @returns Validation result or NextResponse error
+ * 
+ * @example
+ * ```ts
+ * const body = await request.json();
+ * const result = validateData(MySchema, body);
+ * if (!result.success) {
+ *   return result.response;
+ * }
+ * const { data } = result;
+ * ```
+ */
+export function validateData<T>(
+  schema: ZodSchema<T>,
+  data: unknown
+): 
+  | { success: true; data: T }
+  | { success: false; response: NextResponse } {
+  const result = validate(schema, data);
+
+  if (!result.success) {
+    const error = ValidationError.failed(result.details || {});
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: error.message, details: result.details },
+        { status: error.statusCode }
+      ),
+    };
+  }
+
+  return { success: true, data: result.data };
+}
+
+/**
  * Validate and parse request body for API routes
  * @param request - Next.js Request object
  * @param schema - Zod schema to validate against

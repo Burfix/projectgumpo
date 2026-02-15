@@ -6,6 +6,8 @@ import {
   updateUserStatus,
   assignUserToSchool 
 } from "@/lib/db/superAdminDashboard";
+import { validateData, SuperAdminSchemas, CommonSchemas } from "@/lib/validation";
+import { logError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,6 +18,15 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
 
     if (userId) {
+      // Validate UUID format
+      const uuidValidation = CommonSchemas.uuid.safeParse(userId);
+      if (!uuidValidation.success) {
+        return NextResponse.json(
+          { error: "Invalid user ID format" },
+          { status: 400 }
+        );
+      }
+
       const user = await getUserById(userId);
       return NextResponse.json(user);
     }
@@ -27,7 +38,7 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json(users);
   } catch (error: any) {
-    console.error("Get users error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/super-admin/users' });
     return NextResponse.json(
       { error: error.message || "Failed to fetch users" },
       { status: error.message === "Not authenticated" ? 401 : 500 }
@@ -39,7 +50,6 @@ export async function PATCH(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("id");
-    const body = await request.json();
 
     if (!userId) {
       return NextResponse.json(
@@ -48,14 +58,27 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const body = await request.json();
     const { action, value } = body;
 
     let result;
     if (action === "update_role") {
+      const validationResult = validateData(SuperAdminSchemas.updateUserRole, { userId, action, value });
+      if (!validationResult.success) {
+        return validationResult.response;
+      }
       result = await updateUserRole(userId, value);
     } else if (action === "update_status") {
+      const validationResult = validateData(SuperAdminSchemas.updateUserStatus, { userId, action, value });
+      if (!validationResult.success) {
+        return validationResult.response;
+      }
       result = await updateUserStatus(userId, value);
     } else if (action === "assign_school") {
+      const validationResult = validateData(SuperAdminSchemas.assignUserToSchool, { userId, action, value });
+      if (!validationResult.success) {
+        return validationResult.response;
+      }
       result = await assignUserToSchool(userId, value);
     } else {
       return NextResponse.json(
@@ -66,7 +89,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error("Update user error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'PATCH /api/super-admin/users' });
     return NextResponse.json(
       { error: error.message || "Failed to update user" },
       { status: error.message === "Not authenticated" ? 401 : 500 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getParentMessages, markMessageAsRead } from "@/lib/db/parentDashboard";
+import { validateRequest, MessageSchemas } from "@/lib/validation";
+import { logError } from "@/lib/errors";
 
 export async function GET() {
   try {
@@ -36,7 +38,7 @@ export async function GET() {
     return NextResponse.json({ messages });
 
   } catch (error) {
-    console.error("Error fetching messages:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/parent/messages' });
     return NextResponse.json(
       { error: "Failed to fetch messages" },
       { status: 500 }
@@ -72,15 +74,12 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { messageId } = body;
-
-    if (!messageId) {
-      return NextResponse.json(
-        { error: "Message ID is required" },
-        { status: 400 }
-      );
+    const validationResult = await validateRequest(request, MessageSchemas.markRead);
+    if (!validationResult.success) {
+      return validationResult.response;
     }
+
+    const { messageId } = validationResult.data;
 
     // Verify message belongs to this parent
     const { data: message } = await supabase
@@ -102,7 +101,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error("Error marking message as read:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'PATCH /api/parent/messages' });
     return NextResponse.json(
       { error: "Failed to mark message as read" },
       { status: 500 }

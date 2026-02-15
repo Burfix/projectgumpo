@@ -340,6 +340,16 @@ export const ClassroomSchemas = {
     classroomId: CommonSchemas.positiveInt,
     teacherId: CommonSchemas.uuid,
     schoolId: CommonSchemas.positiveInt,
+    isPrimary: z.boolean().optional().default(false),
+  }),
+
+  /**
+   * Remove teacher from classroom
+   */
+  removeTeacher: z.object({
+    classroomId: CommonSchemas.positiveInt,
+    teacherId: CommonSchemas.uuid,
+    schoolId: CommonSchemas.positiveInt,
   }),
 };
 
@@ -353,6 +363,7 @@ export const ActivitySchemas = {
    */
   meal: z.object({
     childId: CommonSchemas.positiveInt,
+    classroomId: CommonSchemas.positiveInt,
     meal_type: z.enum(['breakfast', 'lunch', 'snack', 'dinner']),
     food_items: z.string()
       .min(1, 'Food items are required')
@@ -370,6 +381,7 @@ export const ActivitySchemas = {
    */
   nap: z.object({
     childId: CommonSchemas.positiveInt,
+    classroomId: CommonSchemas.positiveInt,
     start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:MM)'),
     end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:MM)'),
     notes: z.string()
@@ -387,6 +399,7 @@ export const ActivitySchemas = {
    */
   attendance: z.object({
     childId: CommonSchemas.positiveInt,
+    classroomId: CommonSchemas.positiveInt,
     status: z.enum(['present', 'absent', 'late', 'sick']),
     check_in_time: z.string()
       .regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:MM)')
@@ -406,6 +419,7 @@ export const ActivitySchemas = {
    */
   incident: z.object({
     childId: CommonSchemas.positiveInt,
+    classroomId: CommonSchemas.positiveInt,
     incident_type: z.enum(['injury', 'illness', 'behavior', 'other']),
     description: z.string()
       .min(10, 'Description must be at least 10 characters')
@@ -492,6 +506,153 @@ export const SearchSchemas = {
     limit: z.number().int().positive().max(100).default(20),
     sortBy: z.string().optional(),
     sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  }),
+};
+
+// ============================================================================
+// SUPER ADMIN SCHEMAS
+// ============================================================================
+
+export const SuperAdminSchemas = {
+  /**
+   * Update user role
+   */
+  updateUserRole: z.object({
+    userId: CommonSchemas.uuid,
+    action: z.literal('update_role'),
+    value: UserRole,
+  }),
+
+  /**
+   * Update user status
+   */
+  updateUserStatus: z.object({
+    userId: CommonSchemas.uuid,
+    action: z.literal('update_status'),
+    value: z.enum(['active', 'inactive', 'suspended']),
+  }),
+
+  /**
+   * Assign user to school
+   */
+  assignUserToSchool: z.object({
+    userId: CommonSchemas.uuid,
+    action: z.literal('assign_school'),
+    value: CommonSchemas.positiveInt,
+  }),
+};
+
+// ============================================================================
+// MESSAGE SCHEMAS
+// ============================================================================
+
+export const MessageSchemas = {
+  /**
+   * Mark message as read
+   */
+  markRead: z.object({
+    messageId: CommonSchemas.positiveInt,
+  }),
+
+  /**
+   * Send a message
+   */
+  send: z.object({
+    recipientId: CommonSchemas.uuid,
+    subject: z.string()
+      .min(1, 'Subject is required')
+      .max(200, 'Subject must be less than 200 characters')
+      .trim(),
+    body: z.string()
+      .min(1, 'Message body is required')
+      .max(5000, 'Message body must be less than 5000 characters')
+      .trim(),
+  }),
+};
+
+// ============================================================================
+// INVITE SCHEMAS
+// ============================================================================
+
+export const InviteSchemas = {
+  /**
+   * Invite teacher to school
+   */
+  teacher: z.object({
+    email: CommonSchemas.email,
+    name: CommonSchemas.name,
+  }),
+
+  /**
+   * Invite parent to school
+   */
+  parent: z.object({
+    email: CommonSchemas.email,
+    name: CommonSchemas.name,
+    phone: CommonSchemas.phone,
+  }),
+};
+
+// ============================================================================
+// PARENT SCHEMAS (Admin Operations)
+// ============================================================================
+
+export const ParentSchemas = {
+  /**
+   * Link parent to child
+   */
+  linkChild: z.object({
+    parentId: CommonSchemas.uuid,
+    childId: CommonSchemas.positiveInt,
+    schoolId: CommonSchemas.positiveInt,
+    relationship: z.enum(['mother', 'father', 'guardian', 'other']).optional(),
+  }),
+
+  /**
+   * Unlink parent from child
+   */
+  unlinkChild: z.object({
+    parentId: CommonSchemas.uuid,
+    childId: CommonSchemas.positiveInt,
+    schoolId: CommonSchemas.positiveInt,
+  }),
+};
+
+// ============================================================================
+// SETTINGS SCHEMAS
+// ============================================================================
+
+export const SettingsSchemas = {
+  /**
+   * Update school settings
+   */
+  update: z.object({
+    schoolId: CommonSchemas.positiveInt,
+    school_name: z.string().min(1).max(200).optional(),
+    contact_email: CommonSchemas.email.optional(),
+    contact_phone: CommonSchemas.phone,
+    address: z.string().max(500).optional(),
+    operating_hours: z.string().max(100).optional(),
+    notification_preferences: z.object({
+      attendance_alerts: z.boolean().optional(),
+      incident_alerts: z.boolean().optional(),
+      daily_summary_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+    }).optional(),
+  }),
+};
+
+// ============================================================================
+// BILLING SCHEMAS
+// ============================================================================
+
+export const BillingSchemas = {
+  /**
+   * Generate billing report
+   */
+  report: z.object({
+    startDate: CommonSchemas.date.optional(),
+    endDate: CommonSchemas.date.optional(),
+    schoolId: CommonSchemas.positiveInt.optional(),
   }),
 };
 

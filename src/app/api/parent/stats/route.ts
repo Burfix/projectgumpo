@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getParentChildren, getChildTodaySummary, getUnreadMessageCount } from "@/lib/db/parentDashboard";
+import { logError } from "@/lib/errors";
 
 export async function GET() {
   try {
@@ -77,7 +78,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error("Error fetching parent stats:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/parent/stats' });
     return NextResponse.json(
       { error: "Failed to fetch parent statistics" },
       { status: 500 }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { validateRequest, NotificationSchemas } from '@/lib/validation';
+import { logError } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,16 +22,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { userId, type, priority, title, message, data, channels } = body;
-
-    // Validate required fields
-    if (!userId || !type || !title || !message) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    const validationResult = await validateRequest(request, NotificationSchemas.send);
+    if (!validationResult.success) {
+      return validationResult.response;
     }
+
+    const { userId, type, title, message, schoolId } = validationResult.data;
 
     // Get notification preferences for the user
     const { data: preferences, error: prefError } = await supabase
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
       .single();
 
     if (prefError && prefError.code !== 'PGRST116') {
-      console.error('Error fetching preferences:', prefError);
+      logError(new Error('Error fetching preferences: ' + prefError.message), { context: 'POST /api/notifications/send - preferences' });
     }
 
     // Check if user has notifications enabled for this type
@@ -52,7 +50,9 @@ export async function POST(request: Request) {
     }
 
     // Determine which channels to use based on preferences and priority
-    const enabledChannels = getEnabledChannels(channels || ['in_app'], preferences, priority);
+    const enabledChannels = getEnabledChannels(['in_app'], preferences, type);
+    const priority = 'medium'; // Default priority
+    const data = null; // Default data
 
     // Create in-app notification record
     const { error: insertError } = await supabase
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       });
 
     if (insertError) {
-      console.error('Error creating notification:', insertError);
+      logError(new Error('Error creating notification: ' + insertError.message), { context: 'POST /api/notifications/send - insert' });
       return NextResponse.json(
         { error: 'Failed to create notification' },
         { status: 500 }
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Notification error:', error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'POST /api/notifications/send' });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

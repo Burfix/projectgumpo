@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getParentChildren, getChildDailyTimeline } from "@/lib/db/parentDashboard";
+import { logError } from "@/lib/errors";
+import { CommonSchemas } from "@/lib/validation";
 
 export async function GET(request: Request) {
   try {
@@ -43,6 +45,12 @@ export async function GET(request: Request) {
     }
 
     const childIdNum = parseInt(childId);
+    if (isNaN(childIdNum) || childIdNum <= 0) {
+      return NextResponse.json(
+        { error: "Invalid child ID" },
+        { status: 400 }
+      );
+    }
 
     // Verify parent has access to this child
     const children = await getParentChildren(profile.id);
@@ -68,7 +76,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error("Error fetching timeline:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/parent/timeline' });
     return NextResponse.json(
       { error: "Failed to fetch timeline" },
       { status: 500 }

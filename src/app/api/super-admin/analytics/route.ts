@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGrowthMetrics, getSchoolStatuses } from "@/lib/db/superAdminDashboard";
+import { logError } from "@/lib/errors";
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
       statuses,
     });
   } catch (error: any) {
-    console.error("Get analytics error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/super-admin/analytics' });
     return NextResponse.json(
       { error: error.message || "Failed to fetch analytics" },
       { status: error.message === "Not authenticated" ? 401 : 500 }

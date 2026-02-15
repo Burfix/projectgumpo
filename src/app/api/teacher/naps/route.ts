@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { startNap, endNap } from "@/lib/db/teacherDashboard";
+import { validateRequest, ActivitySchemas } from "@/lib/validation";
+import { logError } from "@/lib/errors";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,46 +23,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { action, child_id, classroom_id, nap_id, quality, notes } = body;
-
-    if (action === "start") {
-      if (!child_id || !classroom_id) {
-        return NextResponse.json(
-          { error: "Missing required fields" },
-          { status: 400 }
-        );
-      }
-
-      const result = await startNap(
-        child_id,
-        classroom_id,
-        userData.school_id,
-        userData.id,
-        notes
-      );
-
-      return NextResponse.json(result, { status: 201 });
+    const validationResult = await validateRequest(request, ActivitySchemas.nap);
+    if (!validationResult.success) {
+      return validationResult.response;
     }
 
-    if (action === "end") {
-      if (!nap_id) {
-        return NextResponse.json(
-          { error: "Nap ID is required" },
-          { status: 400 }
-        );
-      }
+    const { childId, classroomId, start_time, end_time, notes, schoolId } = validationResult.data;
 
-      const result = await endNap(nap_id, quality);
-      return NextResponse.json(result);
-    }
-
-    return NextResponse.json(
-      { error: "Invalid action" },
-      { status: 400 }
+    const result = await startNap(
+      childId,
+      classroomId,
+      userData.school_id,
+      userData.id,
+      notes
     );
+
+    return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
-    console.error("Nap log error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'POST /api/teacher/naps' });
     return NextResponse.json(
       { error: error.message || "Failed to log nap" },
       { status: 500 }

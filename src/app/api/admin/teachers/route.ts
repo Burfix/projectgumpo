@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeachers, inviteTeacher, deleteTeacher } from "@/lib/db/principalDashboard";
+import { validateRequest, InviteSchemas, CommonSchemas } from "@/lib/validation";
+import { logError } from "@/lib/errors";
 
 export async function GET() {
   try {
     const teachers = await getTeachers();
     return NextResponse.json(teachers);
   } catch (error: any) {
-    console.error("Get teachers error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'GET /api/admin/teachers' });
     return NextResponse.json(
       { error: error.message || "Failed to fetch teachers" },
       { status: error.message === "Unauthorized" ? 401 : 500 }
@@ -16,20 +18,17 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, name } = body;
-
-    if (!email || !name) {
-      return NextResponse.json(
-        { error: "Email and name are required" },
-        { status: 400 }
-      );
+    const validationResult = await validateRequest(request, InviteSchemas.teacher);
+    if (!validationResult.success) {
+      return validationResult.response;
     }
+
+    const { email, name } = validationResult.data;
 
     const invite = await inviteTeacher(email, name);
     return NextResponse.json(invite, { status: 201 });
   } catch (error: any) {
-    console.error("Invite teacher error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'POST /api/admin/teachers' });
     return NextResponse.json(
       { error: error.message || "Failed to invite teacher" },
       { status: error.message === "Unauthorized" ? 401 : 500 }
@@ -49,10 +48,19 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Validate UUID format
+    const uuidValidation = CommonSchemas.uuid.safeParse(teacherId);
+    if (!uuidValidation.success) {
+      return NextResponse.json(
+        { error: "Invalid teacher ID format" },
+        { status: 400 }
+      );
+    }
+
     await deleteTeacher(teacherId);
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Delete teacher error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'DELETE /api/admin/teachers' });
     return NextResponse.json(
       { error: error.message || "Failed to delete teacher" },
       { status: error.message === "Unauthorized" ? 401 : 500 }

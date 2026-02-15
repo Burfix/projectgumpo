@@ -10,6 +10,7 @@ export * from './helpers';
 export { ValidationSchemas as Schemas } from './schemas';
 export {
   validate,
+  validateData,
   validateRequest,
   validateServerAction,
   validateQueryParams,
