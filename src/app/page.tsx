@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -60,11 +61,13 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl h-96 flex items-center justify-center overflow-hidden">
-          <img
-            src="/images/hero-visibility.svg"
-            alt="Project Goose care visibility dashboard"
-            className="w-full h-full object-cover"
+        <div className="relative bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl h-96 overflow-hidden shadow-xl">
+          <Image
+            src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?q=80&w=1200&auto=format&fit=crop"
+            alt="Happy children learning and playing together"
+            fill
+            className="object-cover"
+            priority
           />
         </div>
       </section>
@@ -143,8 +146,13 @@ export default function Home() {
                   Instant visibility for guardians
                 </div>
               </div>
-              <div className="mt-8 bg-green-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
-                Feature Image
+              <div className="mt-8 relative rounded-xl h-48 overflow-hidden shadow-lg">
+                <Image
+                  src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?q=80&w=800&auto=format&fit=crop"
+                  alt="Parent viewing child's daily updates on mobile app"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
 
@@ -174,8 +182,13 @@ export default function Home() {
                   Milestone celebrations
                 </div>
               </div>
-              <div className="mt-8 bg-blue-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
-                Feature Image
+              <div className="mt-8 relative rounded-xl h-48 overflow-hidden shadow-lg">
+                <Image
+                  src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?q=80&w=800&auto=format&fit=crop"
+                  alt="Teacher documenting children's activities with photos"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
 
@@ -205,8 +218,13 @@ export default function Home() {
                   Time-stamped records
                 </div>
               </div>
-              <div className="mt-8 bg-purple-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
-                Feature Image
+              <div className="mt-8 relative rounded-xl h-48 overflow-hidden shadow-lg">
+                <Image
+                  src="https://images.unsplash.com/photo-1587135941948-670b381f08ce?q=80&w=800&auto=format&fit=crop"
+                  alt="Secure check-in system with QR code scanning"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
 
@@ -236,8 +254,13 @@ export default function Home() {
                   Ongoing success check-ins
                 </div>
               </div>
-              <div className="mt-8 bg-orange-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
-                Feature Image
+              <div className="mt-8 relative rounded-xl h-48 overflow-hidden shadow-lg">
+                <Image
+                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop"
+                  alt="Support team helping school staff with onboarding"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
           </div>
