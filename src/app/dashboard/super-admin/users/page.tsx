@@ -3,6 +3,7 @@ import { protectRoute } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import InviteUserForm from "./InviteUserForm";
 import BulkInviteForm from "./BulkInviteForm";
+import UsersTable from "./UsersTable";
 
 export default async function SuperAdminUsersPage() {
   let user;
@@ -14,7 +15,17 @@ export default async function SuperAdminUsersPage() {
   }
 
   let users:
-    | { id: string; email: string | null; role: string | null; created_at?: string | null }[]
+    | { 
+        id: string; 
+        email: string | null; 
+        name: string | null;
+        role: string | null; 
+        school_id: number | null;
+        is_active: boolean | null;
+        last_sign_in_at: string | null;
+        created_at?: string | null;
+        schools?: { id: number; name: string }[] | null;
+      }[]
     | null = null;
   let usersError: string | null = null;
 
@@ -22,7 +33,17 @@ export default async function SuperAdminUsersPage() {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("users")
-      .select("id,email,role,created_at")
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        school_id,
+        is_active,
+        last_sign_in_at,
+        created_at,
+        schools(id, name)
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -83,7 +104,7 @@ export default async function SuperAdminUsersPage() {
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">All users</h2>
+            <h2 className="text-lg font-semibold text-gray-900">All Users</h2>
             <Link
               href="/dashboard/super-admin"
               className="text-sm text-green-700 hover:text-green-800"
@@ -97,23 +118,7 @@ export default async function SuperAdminUsersPage() {
               {usersError}
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
-              {(users ?? []).length === 0 ? (
-                <div className="px-6 py-6 text-sm text-gray-600">No users found.</div>
-              ) : (
-                (users ?? []).map((u) => (
-                  <div key={u.id} className="px-6 py-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{u.email ?? "(no email)"}</div>
-                      <div className="text-xs text-gray-500">{u.id}</div>
-                    </div>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {u.role ?? "UNKNOWN"}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
+            <UsersTable users={users ?? []} />
           )}
         </div>
       </div>

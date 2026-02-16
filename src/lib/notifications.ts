@@ -3,6 +3,8 @@
  * Handles sending notifications to parents and staff via multiple channels
  */
 
+import { sendIncidentEmail } from '@/lib/email';
+
 export type NotificationType = 
   | 'incident_reported'
   | 'attendance_marked'
@@ -65,21 +67,71 @@ export async function notifyParentOfIncident(
   childName: string,
   incidentType: string,
   severity: string,
-  description: string
+  description: string,
+  actionTaken?: string,
+  teacherName?: string
 ): Promise<boolean> {
-  const priority: NotificationPriority = 
-    severity === 'serious' ? 'urgent' : 
-    severity === 'moderate' ? 'high' : 'normal';
+  try {
+    // Fetch parent email from API route (not directly from DB in client context)
+    const response = await fetch(`/api/users/${parentUserId}`);
+    if (!response.ok) {
+      console.error('Failed to fetch parent info');
+      return false;
+    }
 
-  return sendNotification({
-    userId: parentUserId,
-    type: 'incident_reported',
-    priority,
-    title: `Incident Report: ${childName}`,
-    message: `${incidentType} - ${description.substring(0, 100)}...`,
-    data: { childName, incidentType, severity, description },
-    channels: severity === 'serious' ? ['push', 'sms', 'email', 'in_app'] : ['push', 'in_app'],
-  });
+    const parent = await response.json();
+
+    if (!parent?.email) {
+      console.error('Parent email not found');
+      return false;
+    }
+
+    // Send email notification via API
+    const emailResponse = await fetch('/api/notifications/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'incident',
+        to: parent.email,
+        data: {
+          parentName: parent.name || 'Parent',
+          childName,
+          incidentType,
+          severity,
+          description,
+          actionTaken,
+          time: new Date().toLocaleString(),
+          teacherName,
+        },
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      const error = await emailResponse.json();
+      console.error('Failed to send incident email:', error);
+      return false;
+    }
+
+    // Also send in-app notification
+    const priority: NotificationPriority = 
+      severity === 'serious' ? 'urgent' : 
+      severity === 'moderate' ? 'high' : 'normal';
+
+    await sendNotification({
+      userId: parentUserId,
+      type: 'incident_reported',
+      priority,
+      title: `Incident Report: ${childName}`,
+      message: `${incidentType} - ${description.substring(0, 100)}...`,
+      data: { childName, incidentType, severity, description },
+      channels: ['push', 'in_app'],
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error sending incident notification:', error);
+    return false;
+  }
 }
 
 /**

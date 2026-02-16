@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import FileUpload from "@/components/ui/FileUpload";
+import PhotoUpload from "@/components/PhotoUpload";
 import { notifyParentOfIncident } from "@/lib/notifications";
 
 interface Child {
@@ -25,7 +26,9 @@ export default function ReportIncident() {
   const [severity, setSeverity] = useState<"minor" | "moderate" | "serious">("minor");
   const [notifyParent, setNotifyParent] = useState(true);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoId, setPhotoId] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   useEffect(() => {
     loadChildren();
@@ -33,18 +36,18 @@ export default function ReportIncident() {
 
   async function loadChildren() {
     try {
-      setLoading(false);
+      setLoading(true);
       setError(null);
       
-      // Mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setChildren([
-        { id: 1, first_name: "Ben", last_name: "Smith" },
-        { id: 2, first_name: "Clara", last_name: "Williams" },
-        { id: 3, first_name: "Ava", last_name: "Johnson" },
-        { id: 4, first_name: "Liam", last_name: "Brown" },
-        { id: 5, first_name: "Emma", last_name: "Davis" },
-      ]);
+      const response = await fetch('/api/teacher/children');
+      if (!response.ok) throw new Error('Failed to fetch children');
+      const data = await response.json();
+      
+      setChildren(data.map((child: any) => ({
+        id: child.id,
+        first_name: child.first_name,
+        last_name: child.last_name,
+      })));
     } catch (err) {
       setError("Failed to load children");
       console.error(err);
@@ -107,22 +110,24 @@ export default function ReportIncident() {
         description,
         action_taken: actionTaken,
         severity,
-        notify_parent: notifyParent,
         photo_url: photoUrl,
-        date: new Date().toISOString()
+        incident_time: new Date().toISOString()
       };
 
-      // TODO: API call to save incident
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await fetch('/api/teacher/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(incidentData)
+      });
+
+      if (!response.ok) throw new Error('Failed to submit incident');
       
       // Send notification to parent if requested
       if (notifyParent) {
         const child = children.find(c => c.id === parseInt(selectedChild));
         if (child) {
-          // TODO: Get parent user ID from child record
-          const parentUserId = 'parent-user-id'; // This should come from the database
           await notifyParentOfIncident(
-            parentUserId,
+            selectedChild,
             `${child.first_name} ${child.last_name}`,
             incidentType,
             severity,
@@ -140,6 +145,8 @@ export default function ReportIncident() {
       setSeverity("minor");
       setNotifyParent(true);
       setPhotoUrl(null);
+      setPhotoId(null);
+      setPhotoError(null);
       
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -309,16 +316,29 @@ export default function ReportIncident() {
             <label className="block text-sm font-semibold text-stone-900 mb-3">
               Attach Photo (Optional)
             </label>
-            <FileUpload
-              onFileSelect={handlePhotoUpload}
-              disabled={uploadingPhoto}
-              accept="image/*"
+            <PhotoUpload
+              childId={selectedChild ? parseInt(selectedChild) : undefined}
+              incidentId={undefined}
+              buttonText={photoUrl ? "Change Photo" : "Upload Photo"}
+              buttonClassName="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              showPreview={true}
+              onUploadSuccess={(url, id) => {
+                setPhotoUrl(url);
+                setPhotoId(id);
+                setPhotoError(null);
+              }}
+              onUploadError={(error) => {
+                setPhotoError(error);
+              }}
             />
-            {uploadingPhoto && (
-              <p className="text-sm text-stone-500 mt-2">Uploading photo...</p>
-            )}
             {photoUrl && (
-              <p className="text-sm text-green-600 mt-2">✓ Photo uploaded successfully</p>
+              <div className="mt-4">
+                <p className="text-sm text-green-600 mb-2">✓ Photo attached</p>
+                <img src={photoUrl} alt="Incident" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
+              </div>
+            )}
+            {photoError && (
+              <p className="text-sm text-red-600 mt-2">{photoError}</p>
             )}
           </div>
 

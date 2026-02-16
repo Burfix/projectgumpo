@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assignChildToParent } from "@/lib/db/principalDashboard";
+import { validateData, ParentSchemas } from "@/lib/validation";
+import { logError } from "@/lib/errors";
 
 /**
  * POST /api/admin/parents/assign
@@ -8,23 +10,27 @@ import { assignChildToParent } from "@/lib/db/principalDashboard";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { parent_id, child_id, relationship, is_primary, can_pickup } = body;
+    
+    // Map the incoming data to match ParentSchemas.linkChild
+    const dataToValidate = {
+      parentId: body.parent_id,
+      childId: body.child_id,
+      relationship: body.relationship || "parent",
+      schoolId: undefined, // Will be set by the service based on auth context
+    };
 
-    // Validate required fields
-    if (!parent_id || !child_id) {
-      return NextResponse.json(
-        { error: "parent_id and child_id are required" },
-        { status: 400 }
-      );
+    const validationResult = validateData(ParentSchemas.linkChild, dataToValidate);
+    if (!validationResult.success) {
+      return validationResult.response;
     }
 
-    // Assign child to parent
+    // Assign child to parent with additional fields
     await assignChildToParent({
-      parent_id,
-      child_id,
-      relationship: relationship || "parent",
-      is_primary: is_primary ?? true,
-      can_pickup: can_pickup ?? true,
+      parent_id: body.parent_id,
+      child_id: body.child_id,
+      relationship: validationResult.data.relationship,
+      is_primary: body.is_primary ?? true,
+      can_pickup: body.can_pickup ?? true,
     });
 
     return NextResponse.json({ 
@@ -32,10 +38,10 @@ export async function POST(request: NextRequest) {
       success: true 
     });
   } catch (error: any) {
-    console.error("Error assigning child to parent:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), { context: 'POST /api/admin/parents/assign' });
     return NextResponse.json(
       { error: error.message || "Failed to assign child" },
-      { status: 500 }
+      { status: error.message === "Unauthorized" ? 401 : 500 }
     );
   }
 }

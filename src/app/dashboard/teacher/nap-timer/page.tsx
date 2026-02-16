@@ -33,15 +33,31 @@ export default function NapTimer() {
       setLoading(true);
       setError(null);
       
-      // Mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setChildren([
-        { id: 1, first_name: "Ben", last_name: "Smith", napStatus: "awake", startTime: null, endTime: null },
-        { id: 2, first_name: "Clara", last_name: "Williams", napStatus: "awake", startTime: null, endTime: null },
-        { id: 3, first_name: "Ava", last_name: "Johnson", napStatus: "awake", startTime: null, endTime: null },
-        { id: 4, first_name: "Liam", last_name: "Brown", napStatus: "awake", startTime: null, endTime: null },
-        { id: 5, first_name: "Emma", last_name: "Davis", napStatus: "awake", startTime: null, endTime: null },
-      ]);
+      const response = await fetch('/api/teacher/children');
+      if (!response.ok) throw new Error('Failed to fetch children');
+      const data = await response.json();
+      
+      // Get today's naps
+      const today = new Date().toISOString().split('T')[0];
+      const napsResponse = await fetch(`/api/teacher/naps?date=${today}`);
+      const napsData = napsResponse.ok ? await napsResponse.json() : [];
+      
+      // Merge nap data with children
+      const napsMap = new Map(
+        napsData.map((n: any) => [n.child_id, n])
+      );
+      
+      setChildren(data.map((child: any) => {
+        const nap: any = napsMap.get(child.id);
+        return {
+          id: child.id,
+          first_name: child.first_name,
+          last_name: child.last_name,
+          napStatus: nap && !nap.end_time ? "napping" : "awake",
+          startTime: nap?.start_time ? new Date(nap.start_time) : null,
+          endTime: nap?.end_time ? new Date(nap.end_time) : null,
+        };
+      }));
     } catch (err) {
       setError("Failed to load children");
       console.error(err);
@@ -50,20 +66,58 @@ export default function NapTimer() {
     }
   }
 
-  const startNap = (id: number) => {
-    setChildren(children.map(child =>
-      child.id === id
-        ? { ...child, napStatus: "napping", startTime: new Date(), endTime: null }
-        : child
-    ));
+  const startNap = async (id: number) => {
+    try {
+      const now = new Date();
+      setChildren(children.map(child =>
+        child.id === id
+          ? { ...child, napStatus: "napping", startTime: now, endTime: null }
+          : child
+      ));
+
+      // Save start time to database
+      await fetch('/api/teacher/naps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          child_id: id,
+          start_time: now.toISOString(),
+        })
+      });
+    } catch (err) {
+      console.error('Failed to start nap:', err);
+      setError("Failed to start nap timer");
+    }
   };
 
-  const endNap = (id: number) => {
-    setChildren(children.map(child =>
-      child.id === id
-        ? { ...child, napStatus: "awake", endTime: new Date() }
-        : child
-    ));
+  const endNap = async (id: number) => {
+    try {
+      const now = new Date();
+      const child = children.find(c => c.id === id);
+      if (!child || !child.startTime) return;
+
+      const duration = Math.floor((now.getTime() - child.startTime.getTime()) / 60000);
+
+      setChildren(children.map(c =>
+        c.id === id
+          ? { ...c, napStatus: "awake", endTime: now }
+          : c
+      ));
+
+      // Update end time in database
+      await fetch('/api/teacher/naps', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          child_id: id,
+          end_time: now.toISOString(),
+          duration_minutes: duration
+        })
+      });
+    } catch (err) {
+      console.error('Failed to end nap:', err);
+      setError("Failed to end nap timer");
+    }
   };
 
   const calculateDuration = (startTime: Date | null) => {
@@ -89,18 +143,7 @@ export default function NapTimer() {
       setSaving(true);
       setError(null);
       
-      const napRecords = children
-        .filter(c => c.startTime && c.endTime)
-        .map(c => ({
-          child_id: c.id,
-          start_time: c.startTime,
-          end_time: c.endTime,
-          duration_minutes: Math.floor((c.endTime!.getTime() - c.startTime!.getTime()) / 60000),
-          date: new Date().toISOString().split('T')[0]
-        }));
-
-      // TODO: API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Naps are already saved in real-time via startNap/endNap
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

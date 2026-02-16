@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DashboardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { ErrorDisplay, EmptyState } from "@/components/ErrorBoundary";
 
 type Child = {
   id: number;
@@ -112,30 +114,33 @@ export default function ParentDashboard() {
   }
 
   if (loading && !selectedChild) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-stone-600">Loading your children&apos;s day...</p>
-        </div>
-      </main>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">😔</div>
-          <h2 className="text-xl font-semibold text-stone-900 mb-2">Oops!</h2>
-          <p className="text-stone-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700"
-          >
-            Try Again
-          </button>
-        </div>
+        <ErrorDisplay 
+          error={error}
+          retry={() => window.location.reload()}
+          context="Failed to load dashboard"
+        />
+      </main>
+    );
+  }
+
+  if (!selectedChild || children.length === 0) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
+        <EmptyState
+          icon="👶"
+          title="No Children Linked"
+          description="You don't have any children linked to your account yet. Please contact your school administrator."
+          action={{
+            label: "Refresh Page",
+            onClick: () => window.location.reload()
+          }}
+        />
       </main>
     );
   }
@@ -329,6 +334,7 @@ export default function ParentDashboard() {
                   let icon = '📍';
                   let activity = '';
                   let color = 'text-stone-700';
+                  let photos: any[] = [];
 
                   switch (event.type) {
                     case 'check_in':
@@ -360,9 +366,17 @@ export default function ParentDashboard() {
                       break;
                     case 'incident':
                       icon = '⚠️';
-                      const incident = event.data as { incident_type?: string; severity?: string };
+                      const incident = event.data as { incident_type?: string; severity?: string; photos?: any[] };
                       activity = `${incident.incident_type || 'Incident'} (${incident.severity || 'minor'})`;
                       color = 'text-orange-700';
+                      photos = incident.photos || [];
+                      break;
+                    case 'activity':
+                      icon = '🎨';
+                      const activityData = event.data as { activity_type?: string; description?: string; photos?: any[] };
+                      activity = activityData.description || activityData.activity_type || 'Daily activity';
+                      color = 'text-blue-700';
+                      photos = activityData.photos || [];
                       break;
                   }
 
@@ -375,6 +389,25 @@ export default function ParentDashboard() {
                         <div className="flex-grow">
                           <p className={`text-sm font-semibold ${color} mb-0.5`}>{activity}</p>
                           <p className="text-xs text-stone-500">{time}</p>
+                          {photos.length > 0 && (
+                            <div className="mt-2 flex gap-2">
+                              {photos.slice(0, 3).map((photo: any, idx: number) => (
+                                <img 
+                                  key={idx}
+                                  src={photo.url} 
+                                  alt={photo.caption || 'Activity photo'} 
+                                  className="w-16 h-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => window.open(photo.url, '_blank')}
+                                  title={photo.caption || 'Click to view full size'}
+                                />
+                              ))}
+                              {photos.length > 3 && (
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                                  +{photos.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

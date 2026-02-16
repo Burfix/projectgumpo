@@ -555,7 +555,35 @@ export const MessageSchemas = {
   }),
 
   /**
-   * Send a message
+   * Create a new message
+   */
+  create: z.object({
+    recipientId: CommonSchemas.uuid.optional(),
+    classroomId: CommonSchemas.positiveInt.optional(),
+    childId: CommonSchemas.positiveInt.optional(),
+    subject: z.string()
+      .min(1, 'Subject is required')
+      .max(200, 'Subject must be less than 200 characters')
+      .trim()
+      .optional(),
+    body: z.string()
+      .min(1, 'Message body is required')
+      .max(5000, 'Message body must be less than 5000 characters')
+      .trim(),
+    messageType: z.enum(['direct', 'announcement', 'alert', 'reminder']).default('direct'),
+    priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+    attachments: z.array(z.string().url()).optional(),
+  }),
+
+  /**
+   * Update a message (mark as read)
+   */
+  update: z.object({
+    isRead: z.boolean(),
+  }),
+
+  /**
+   * Send a message (legacy - kept for backwards compatibility)
    */
   send: z.object({
     recipientId: CommonSchemas.uuid,

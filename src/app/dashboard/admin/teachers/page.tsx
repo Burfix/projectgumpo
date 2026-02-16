@@ -15,15 +15,41 @@ interface Teacher {
   }>;
 }
 
+interface Classroom {
+  id: number;
+  name: string;
+  age_group?: string;
+  capacity?: number;
+}
+
 export default function TeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "" });
+  const [assignData, setAssignData] = useState({
+    classroomId: "",
+    isPrimary: false,
+  });
 
   useEffect(() => {
     fetchTeachers();
+    fetchClassrooms();
   }, []);
+
+  const fetchClassrooms = async () => {
+    try {
+      const response = await fetch("/api/admin/classrooms");
+      if (!response.ok) throw new Error("Failed to fetch classrooms");
+      const data = await response.json();
+      setClassrooms(data);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const fetchTeachers = async () => {
     try {
@@ -74,6 +100,43 @@ export default function TeachersPage() {
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to delete teacher");
+    }
+  };
+
+  const openAssignModal = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignClassroom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTeacher) return;
+
+    try {
+      const response = await fetch("/api/admin/classrooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assign-teacher",
+          teacherId: selectedTeacher.id,
+          classroomId: parseInt(assignData.classroomId),
+          isPrimary: assignData.isPrimary,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to assign teacher");
+      }
+
+      alert("Teacher assigned to classroom successfully!");
+      setShowAssignModal(false);
+      setSelectedTeacher(null);
+      setAssignData({ classroomId: "", isPrimary: false });
+      await fetchTeachers();
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert(error.message || "Failed to assign teacher");
     }
   };
 
@@ -193,6 +256,12 @@ export default function TeachersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
+                        onClick={() => openAssignModal(teacher)}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        + Assign Class
+                      </button>
+                      <button
                         onClick={() => handleDelete(teacher.id)}
                         className="text-red-600 hover:text-red-900"
                       >
@@ -206,6 +275,74 @@ export default function TeachersPage() {
           </div>
         )}
       </div>
+
+      {/* Assign Classroom Modal */}
+      {showAssignModal && selectedTeacher && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold mb-4">
+              Assign Classroom to {selectedTeacher.name}
+            </h2>
+            <form onSubmit={handleAssignClassroom} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Classroom *
+                </label>
+                <select
+                  required
+                  value={assignData.classroomId}
+                  onChange={(e) =>
+                    setAssignData({ ...assignData, classroomId: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a classroom --</option>
+                  {classrooms.map((classroom) => (
+                    <option key={classroom.id} value={classroom.id}>
+                      {classroom.name} {classroom.age_group && `(${classroom.age_group})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isPrimary"
+                  checked={assignData.isPrimary}
+                  onChange={(e) =>
+                    setAssignData({ ...assignData, isPrimary: e.target.checked })
+                  }
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isPrimary" className="ml-2 block text-sm text-gray-700">
+                  Primary teacher for this classroom
+                </label>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAssignModal(false);
+                    setSelectedTeacher(null);
+                    setAssignData({ classroomId: "", isPrimary: false });
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Assign
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

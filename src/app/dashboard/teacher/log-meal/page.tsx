@@ -30,15 +30,19 @@ export default function LogMeal() {
       setLoading(true);
       setError(null);
       
-      // Mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setChildren([
-        { id: 1, first_name: "Ben", last_name: "Smith", logged: false, mealType: "", amount: "", notes: "" },
-        { id: 2, first_name: "Clara", last_name: "Williams", logged: false, mealType: "", amount: "", notes: "" },
-        { id: 3, first_name: "Ava", last_name: "Johnson", logged: false, mealType: "", amount: "", notes: "" },
-        { id: 4, first_name: "Liam", last_name: "Brown", logged: false, mealType: "", amount: "", notes: "" },
-        { id: 5, first_name: "Emma", last_name: "Davis", logged: false, mealType: "", amount: "", notes: "" },
-      ]);
+      const response = await fetch('/api/teacher/children');
+      if (!response.ok) throw new Error('Failed to fetch children');
+      const data = await response.json();
+      
+      setChildren(data.map((child: any) => ({
+        id: child.id,
+        first_name: child.first_name,
+        last_name: child.last_name,
+        logged: false,
+        mealType: "",
+        amount: "",
+        notes: ""
+      })));
     } catch (err) {
       setError("Failed to load children");
       console.error(err);
@@ -73,13 +77,21 @@ export default function LogMeal() {
           meal_type: c.mealType,
           amount_eaten: c.amount,
           notes: c.notes,
-          date: new Date().toISOString().split('T')[0]
+          meal_time: new Date().toISOString()
         }));
 
-      // TODO: API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await fetch('/api/teacher/meals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meals: mealRecords })
+      });
+
+      if (!response.ok) throw new Error('Failed to save meals');
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+      // Reset logged children
+      setChildren(children.map(c => ({ ...c, logged: false, mealType: "", amount: "", notes: "" })));
     } catch (err) {
       setError("Failed to save meal logs");
       console.error(err);

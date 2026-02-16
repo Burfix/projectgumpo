@@ -75,3 +75,61 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+// Functional error display component
+export function ErrorDisplay({ 
+  error, 
+  retry, 
+  context 
+}: { 
+  error: string; 
+  retry?: () => void;
+  context?: string;
+}) {
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+      <div className="text-4xl mb-3">❌</div>
+      <h3 className="text-lg font-semibold text-red-900 mb-2">
+        {context || "Error"}
+      </h3>
+      <p className="text-red-700 mb-4">{error}</p>
+      {retry && (
+        <button
+          onClick={retry}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+        >
+          Try Again
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Empty state component
+export function EmptyState({ 
+  icon = "📭",
+  title,
+  description,
+  action
+}: {
+  icon?: string;
+  title: string;
+  description: string;
+  action?: { label: string; onClick: () => void };
+}) {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+      <div className="text-6xl mb-4">{icon}</div>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 mb-6 max-w-md mx-auto">{description}</p>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+        >
+          {action.label}
+        </button>
+      )}
+    </div>
+  );
+}

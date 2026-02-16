@@ -28,19 +28,31 @@ export default function RecordAttendance() {
       setLoading(true);
       setError(null);
       
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/teacher/classroom/children');
-      // const data = await response.json();
+      const response = await fetch('/api/teacher/children');
+      if (!response.ok) throw new Error('Failed to fetch children');
+      const data = await response.json();
       
-      // Mock data for now
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setChildren([
-        { id: 1, first_name: "Ben", last_name: "Smith", status: "not-marked" },
-        { id: 2, first_name: "Clara", last_name: "Williams", status: "not-marked" },
-        { id: 3, first_name: "Ava", last_name: "Johnson", status: "not-marked" },
-        { id: 4, first_name: "Liam", last_name: "Brown", status: "not-marked" },
-        { id: 5, first_name: "Emma", last_name: "Davis", status: "not-marked" },
-      ]);
+      // Get today's attendance
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceResponse = await fetch(`/api/teacher/attendance?date=${today}`);
+      const attendanceData = attendanceResponse.ok ? await attendanceResponse.json() : [];
+      
+      // Merge attendance data with children
+      const attendanceMap = new Map(
+        attendanceData.map((a: any) => [a.child_id, a])
+      );
+      
+      setChildren(data.map((child: any) => {
+        const attendance: any = attendanceMap.get(child.id);
+        return {
+          id: child.id,
+          first_name: child.first_name,
+          last_name: child.last_name,
+          status: attendance?.status || "not-marked",
+          time: attendance?.check_in_time,
+          notes: attendance?.notes || "",
+        };
+      }));
     } catch (err) {
       setError("Failed to load children");
       console.error(err);
@@ -76,19 +88,19 @@ export default function RecordAttendance() {
         .map(c => ({
           child_id: c.id,
           status: c.status,
-          time: c.time,
+          check_in_time: c.time,
           notes: c.notes,
           date: new Date().toISOString().split('T')[0]
         }));
 
-      // TODO: Replace with actual API call
-      // await fetch('/api/teacher/attendance', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ records: attendanceRecords })
-      // });
+      const response = await fetch('/api/teacher/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records: attendanceRecords })
+      });
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!response.ok) throw new Error('Failed to save attendance');
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

@@ -302,8 +302,8 @@ export async function getChildDailyTimeline(childId: number, date?: string) {
   const supabase = await createClient();
   const targetDate = date || new Date().toISOString().split('T')[0];
 
-  // Get all events for the day
-  const [attendance, meals, naps, incidents] = await Promise.all([
+  // Get all events for the day, including daily activities with photos
+  const [attendance, meals, naps, incidents, activities] = await Promise.all([
     supabase
       .from('attendance_logs')
       .select('*')
@@ -321,14 +321,25 @@ export async function getChildDailyTimeline(childId: number, date?: string) {
       .eq('date', targetDate),
     supabase
       .from('incident_reports')
-      .select('*')
+      .select(`
+        *,
+        photos(id, storage_path, caption, created_at)
+      `)
       .eq('child_id', childId)
       .eq('date', targetDate),
+    supabase
+      .from('daily_activities')
+      .select(`
+        *,
+        photos(id, storage_path, caption, created_at)
+      `)
+      .eq('child_id', childId)
+      .eq('activity_date', targetDate),
   ]);
 
   // Combine into timeline events
   type TimelineEvent = {
-    type: 'check_in' | 'check_out' | 'meal' | 'nap_start' | 'nap_end' | 'incident';
+    type: 'check_in' | 'check_out' | 'meal' | 'nap_start' | 'nap_end' | 'incident' | 'activity';
     time: string;
     data: Record<string, unknown>;
   };
@@ -378,12 +389,37 @@ export async function getChildDailyTimeline(childId: number, date?: string) {
     }
   });
 
-  // Add incident events
+  // Add incident events with photo URLs
   incidents.data?.forEach(incident => {
+    // Add public URLs to photos
+    const photos = incident.photos?.map((photo: any) => {
+      const { data: { publicUrl } } = supabase.storage
+        .from("activity-photos")
+        .getPublicUrl(photo.storage_path);
+      return { ...photo, url: publicUrl };
+    });
+    
     events.push({
       type: 'incident',
       time: incident.occurred_at,
-      data: incident,
+      data: { ...incident, photos },
+    });
+  });
+
+  // Add daily activity events with photo URLs
+  activities.data?.forEach(activity => {
+    // Add public URLs to photos
+    const photos = activity.photos?.map((photo: any) => {
+      const { data: { publicUrl } } = supabase.storage
+        .from("activity-photos")
+        .getPublicUrl(photo.storage_path);
+      return { ...photo, url: publicUrl };
+    });
+    
+    events.push({
+      type: 'activity',
+      time: activity.created_at,
+      data: { ...activity, photos },
     });
   });
 
